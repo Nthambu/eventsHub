@@ -1,1 +1,432 @@
-/* You can add global styles to this file, and also import other style files */
+/* CSS Custom Properties */
+:root {
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Open Sans', 'Helvetica Neue', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
+  
+  /* Colors */
+  --surface-0: #ffffff;
+  --surface-1: #f8fafc;
+  --surface-2: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --fill-accent: #1a56db;
+  --on-accent: #ffffff;
+  --radius: 8px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--surface-0);
+  color: var(--text-primary);
+}
+
+/* Buttons */
+.btn {
+  padding: 8px 18px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: #1a56db;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #1e40af;
+  color: #fff;
+  text-decoration: none;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 0.5px solid var(--border-strong);
+  color: var(--text-primary);
+}
+
+.btn-outline:hover {
+  background: var(--surface-1);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.btn-sm {
+  padding: 5px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
+.btn-danger {
+  background: #fee2e2;
+  color: #991b1b;
+  border: none;
+}
+
+/* Cards */
+.card {
+  background: var(--surface-2);
+  border: 0.5px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.tag-blue {
+  background: #eef3ff;
+  color: #1447c0;
+}
+
+.tag-green {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.tag-yellow {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.tag-red {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.tag-gray {
+  background: var(--surface-1);
+  color: var(--text-secondary);
+}
+
+/* Inputs */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.input {
+  height: 34px;
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 0 10px;
+  font-size: 13px;
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+
+.select {
+  height: 34px;
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 0 10px;
+  font-size: 13px;
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+
+.textarea {
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  font-size: 13px;
+  background: var(--surface-2);
+  color: var(--text-primary);
+  resize: none;
+}
+
+/* Navigation */
+.nav {
+  height: 52px;
+  background: #1a56db;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 24px;
+}
+
+.nav-logo {
+  color: #fff;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.nav-links {
+  display: flex;
+  gap: 16px;
+  margin-left: auto;
+  align-items: center;
+}
+
+.nav-link {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  color: #fff;
+  text-decoration: none;
+}
+
+.nav-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 0.5px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  padding: 5px 14px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* Event card */
+.ecard-img {
+  width: 100%;
+  height: 120px;
+  background: linear-gradient(135deg, #1a56db22, #1a56db44);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+
+.ecard-body {
+  padding: 12px;
+}
+
+.ecard-title {
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.ecard-meta {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+/* Ticket option */
+.ticket-opt {
+  border: 0.5px solid var(--border-strong);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ticket-opt.selected {
+  border-color: #1a56db;
+  border-width: 1.5px;
+  background: #eef3ff;
+}
+
+.ticket-opt:hover:not(.selected) {
+  background: var(--surface-1);
+}
+
+/* Dropdown */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-toggle {
+  cursor: pointer;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  z-index: 1000;
+  min-width: 120px;
+}
+
+.dropdown.show .dropdown-menu {
+  display: block;
+}
+
+.dropdown-item {
+  display: block;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--text-primary);
+  text-decoration: none;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background: var(--surface-1);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+/* Success */
+.success-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #dcfce7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  margin: 0 auto 12px;
+}
+
+.order-num {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  color: #1a56db;
+  letter-spacing: 3px;
+  font-weight: 500;
+}
+
+/* Ticket stub */
+.ticket-stub {
+  border: 1.5px dashed #1a56db;
+  border-radius: 10px;
+  padding: 16px;
+  background: #f0f4ff;
+}
+
+/* Step bar */
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 12px 0 16px;
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.step-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.step-circle.done {
+  background: #1a56db;
+  color: #fff;
+}
+
+.step-circle.active {
+  background: #1a56db;
+  color: #fff;
+}
+
+.step-circle.todo {
+  background: var(--surface-1);
+  border: 0.5px solid var(--border-strong);
+  color: var(--text-muted);
+}
+
+.step-line {
+  height: 1px;
+  width: 32px;
+  background: var(--border-strong);
+}
+
+.step-line.done {
+  background: #1a56db;
+}
+
+/* Stripe element mock */
+.stripe-box {
+  height: 40px;
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stripe-card-num {
+  font-size: 13px;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+}
+
+.stripe-logo {
+  font-size: 10px;
+  color: #635bff;
+  font-weight: 600;
+  background: #f0effe;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Utility classes */
+.me-1 { margin-right: 0.25rem; }
+.mb-1 { margin-bottom: 0.25rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 1rem; }
+.mb-4 { margin-bottom: 1.5rem; }
+.mt-1 { margin-top: 0.25rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-3 { margin-top: 1rem; }
+.mt-4 { margin-top: 1.5rem; }
+
+.text-center { text-align: center; }
+.text-muted { color: var(--text-muted); }
+.fw-500 { font-weight: 500; }
+.fw-600 { font-weight: 600; }
+

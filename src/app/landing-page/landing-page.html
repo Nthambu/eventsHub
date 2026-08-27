@@ -1,0 +1,47 @@
+<!-- Navigation -->
+<div class="nav">
+  <span class="nav-logo">🎟️ EventHub</span>
+  <div class="nav-links">
+    <span class="nav-link">Events</span>
+    <span class="nav-link">Admin</span>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div style="padding: 28px 24px">
+  <!-- Header -->
+  <div class="text-center mb-4">
+    <div style="font-size: 22px; font-weight: 500; margin-bottom: 6px">Upcoming events</div>
+    <div style="font-size: 13px; color: var(--text-secondary)">
+      Browse and grab your tickets before they sell out
+    </div>
+  </div>
+
+  <!-- Events Grid -->
+  <div
+    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px"
+  >
+    <div *ngFor="let event of events" class="card">
+      <div class="ecard-img" [style]="'background: ' + event.gradient">{{ event.emoji }}</div>
+      <div class="ecard-body">
+        <div class="ecard-title">{{ event.title }}</div>
+        <div class="ecard-meta">
+          📅 {{ event.date.split(' · ')[0] }} · {{ event.date.split(' · ')[1] }}<br />
+          {{ event.location }}
+        </div>
+        <div style="display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap">
+          <span *ngFor="let ticket of event.tickets" class="tag tag-blue">
+            {{ ticket.type }} — ${{ ticket.price.toFixed(2) }}
+          </span>
+        </div>
+        <button
+          class="btn btn-primary"
+          style="width: 100%; justify-content: center; font-size: 12px; padding: 7px"
+          (click)="getTickets(event)"
+        >
+          Get Tickets →
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

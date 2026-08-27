@@ -1,0 +1,136 @@
+<!-- Navigation -->
+<div class="nav">
+  <span class="nav-logo">🎟️ EventHub</span>
+  <div class="nav-links">
+    <span class="nav-link" (click)="goBackToEvents()">← All Events</span>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div
+  *ngIf="event && booking"
+  style="padding: 20px 24px; display: grid; grid-template-columns: 1fr 280px; gap: 24px"
+>
+  <!-- Event Info -->
+  <div>
+    <div
+      class="ecard-img"
+      [style]="
+        'background: ' + event.gradient + '; height: 180px; font-size: 48px; margin-bottom: 16px'
+      "
+    >
+      {{ event.emoji }}
+    </div>
+    <div style="font-size: 20px; font-weight: 500; margin-bottom: 8px">{{ event.title }}</div>
+    <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px">
+      📅 {{ event.date }}
+    </div>
+    <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px">
+      📍 {{ event.location }}
+    </div>
+    <button class="btn btn-outline btn-sm mb-3">📘 View on Facebook</button>
+    <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px">About this event</div>
+    <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.7">
+      An unforgettable night under the stars on {{ event.location.split(',')[0] }}'s most iconic
+      rooftop. Featuring live DJ sets, cocktails, and breathtaking skyline views. Dress to impress —
+      smart casual required.
+    </div>
+  </div>
+
+  <!-- Ticket Selection Card -->
+  <div class="card" style="padding: 16px; align-self: start">
+    <div style="font-size: 14px; font-weight: 500; margin-bottom: 12px">Select tickets</div>
+
+    <!-- Ticket Options -->
+    <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px">
+      <div
+        *ngFor="let ticket of event.tickets"
+        class="ticket-opt"
+        [class.selected]="booking.selectedTicketType === ticket.type"
+        (click)="selectTicketType(ticket.type)"
+      >
+        <div>
+          <div style="font-size: 13px; font-weight: 500">{{ ticket.description }}</div>
+          <div style="font-size: 11px; color: var(--text-secondary)">
+            {{
+              ticket.type === 'GA'
+                ? 'Standing room'
+                : ticket.type === 'VIP'
+                  ? 'Reserved seating'
+                  : 'Special access'
+            }}
+          </div>
+        </div>
+        <div style="font-size: 14px; font-weight: 500; color: #1a56db">
+          ${{ ticket.price.toFixed(2) }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Quantity Selector -->
+    <div style="font-size: 12px; font-weight: 500; margin-bottom: 8px">Quantity</div>
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px">
+      <button class="btn btn-outline btn-sm" (click)="changeQuantity(-1)">−</button>
+      <span style="font-size: 16px; font-weight: 500">{{ booking.quantity }}</span>
+      <button class="btn btn-outline btn-sm" (click)="changeQuantity(1)">+</button>
+    </div>
+
+    <!-- Price Summary -->
+    <div
+      style="
+        background: var(--surface-1);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 14px;
+        font-size: 12px;
+      "
+    >
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          color: var(--text-secondary);
+          margin-bottom: 4px;
+        "
+      >
+        <span>{{ booking.selectedTicketType }} × {{ booking.quantity }}</span>
+        <span>${{ subtotal.toFixed(2) }}</span>
+      </div>
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          color: var(--text-secondary);
+          margin-bottom: 8px;
+        "
+      >
+        <span>Service fee</span>
+        <span>${{ serviceFee.toFixed(2) }}</span>
+      </div>
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          font-weight: 500;
+          border-top: 0.5px solid var(--border);
+          padding-top: 8px;
+        "
+      >
+        <span>Total</span>
+        <span style="color: #1a56db">${{ total.toFixed(2) }}</span>
+      </div>
+    </div>
+
+    <!-- Checkout Button -->
+    <button
+      class="btn btn-primary"
+      style="width: 100%; justify-content: center; font-size: 13px"
+      (click)="proceedToCheckout()"
+    >
+      🔒 Checkout securely
+    </button>
+    <div class="text-center mt-2" style="font-size: 11px; color: var(--text-muted)">
+      Secured by Stripe · Non-refundable
+    </div>
+  </div>
+</div>

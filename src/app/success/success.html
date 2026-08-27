@@ -1,0 +1,134 @@
+<!-- Navigation -->
+<div class="nav">
+  <span class="nav-logo">🎟️ EventHub</span>
+</div>
+
+<!-- Main Content -->
+<div *ngIf="booking && booking.event" style="padding: 40px 24px; max-width: 480px; margin: 0 auto">
+  <div class="success-icon">✅</div>
+
+  <div class="text-center mb-4">
+    <div style="font-size: 20px; font-weight: 500; margin-bottom: 6px">Payment confirmed!</div>
+    <div style="font-size: 13px; color: var(--text-secondary)">
+      Your ticket confirmation has been emailed to {{ booking.customerInfo.email }}
+    </div>
+  </div>
+
+  <div class="ticket-stub mb-3">
+    <div
+      style="
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: #4b6cb7;
+        margin-bottom: 6px;
+      "
+    >
+      Your order number
+    </div>
+    <div class="order-num">{{ orderNumber }}</div>
+
+    <div style="border-top: 0.5px dashed #1a56db; margin: 12px 0"></div>
+
+    <div style="font-size: 13px; font-weight: 500; margin-bottom: 4px">
+      {{ booking.event.title }}
+    </div>
+    <div
+      style="
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        font-size: 12px;
+        color: var(--text-secondary);
+      "
+    >
+      <div>
+        <div
+          style="
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 2px;
+          "
+        >
+          Date
+        </div>
+        {{ booking.event.date.split(' · ')[0] }} · {{ booking.event.date.split(' · ')[1] }}
+      </div>
+      <div>
+        <div
+          style="
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 2px;
+          "
+        >
+          Tickets
+        </div>
+        {{ booking.selectedTicketType }} × {{ booking.quantity }}
+      </div>
+      <div>
+        <div
+          style="
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 2px;
+          "
+        >
+          Venue
+        </div>
+        {{ booking.event.location.split(',')[0] }}, {{ booking.event.location.split(',')[1] }}
+      </div>
+      <div>
+        <div
+          style="
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 2px;
+          "
+        >
+          Total paid
+        </div>
+        ${{ total.toFixed(2) }}
+      </div>
+    </div>
+  </div>
+
+  <div
+    style="
+      background: #fffbeb;
+      border: 0.5px solid #f59e0b;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 16px;
+    "
+  >
+    <div style="font-size: 12px; font-weight: 500; color: #92400e; margin-bottom: 6px">
+      📋 What to bring
+    </div>
+    <div style="font-size: 12px; color: #78350f; line-height: 2">
+      • This confirmation (digital or printed)<br />
+      • Valid photo ID matching your name<br />
+      • Arrive 30 minutes early
+    </div>
+  </div>
+
+  <button
+    class="btn btn-primary mb-2"
+    style="width: 100%; justify-content: center"
+    (click)="browseMoreEvents()"
+  >
+    Browse more events
+  </button>
+
+  <button
+    class="btn btn-outline"
+    style="width: 100%; justify-content: center; font-size: 13px"
+    (click)="printPage()"
+  >
+    🖨️ Print this page
+  </button>
+</div>
