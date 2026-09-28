@@ -10,15 +10,14 @@ import { ToastrService } from 'ngx-toastr';
 })
 export class BookingService {
   private readonly baseUrl: string = environment.baseUrl;
-  // 1. Keep the writable signal private so components can't mutate it directly
   private selectedEventData = signal<any>({});
 
-  // 2. Expose a read-only version for components to safely consume
+  //  Exposing a read-only version for components to safely consume
   public selectedEventData$ = this.selectedEventData.asReadonly();
 
   constructor(private http: HttpClient, private readonly toastr: ToastrService) {}
 
-  // 3. Provide methods to update the state
+  // methods to update the state
   updateCheckoutData(newCheckoutData: any): void {
     this.selectedEventData.set(newCheckoutData);
   }
@@ -31,15 +30,15 @@ export class BookingService {
     selectedTicketType: 'General',
     quantity: 2,
     customerInfo: {
-      fullName: 'Jane Smith',
-      email: 'jane@example.com',
-      phone: '+1 312 555 0100'
+      fullName: '',
+      email: '',
+      phone: ''
     },
     billingAddress: {
-      street: '123 Main St',
-      city: 'Chicago',
-      state: 'IL',
-      zip: '60601'
+      street: '',
+      city: '',
+      state: '',
+      zip: ''
     }
   });
 

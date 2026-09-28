@@ -19,13 +19,6 @@ export class Checkout implements OnInit {
   // Payment state
   isProcessing = false;
   paymentBreakdown: any = null;
-  
-  // Customer info (you can make these editable later)
-  customerInfo = {
-    fullName: 'Jane Smith',
-    email: 'jane@example.com',
-    phone: '+1 312 555 0100'
-  };
 customerInfoForm!:FormGroup;
   constructor(
     public readonly router: Router,
@@ -38,12 +31,8 @@ customerInfoForm!:FormGroup;
     this.initializeCustomerForm();
     // Initialize checkout data from signal
     this.checkoutData = this.bookingService.selectedEventData$();
-    
-    console.log('Checkout data:', this.checkoutData);
-    
     // Check if we have checkout data
     if (!this.checkoutData || !this.checkoutData.event) {
-      console.log('No checkout data found, redirecting to home');
       this.toastr.warning('No event selected', 'Please select an event first');
       this.router.navigate(['/']);
       return;
@@ -77,11 +66,6 @@ this.customerInfoForm=this.fb.group({
     const ticketIndex = this.checkoutData.event.ticket_types.findIndex(
       (ticket: any) => ticket.type === this.checkoutData.selectedTicketType
     );
-    
-    console.log('Selected ticket type:', this.checkoutData.selectedTicketType);
-    console.log('Available ticket types:', this.checkoutData.event.ticket_types);
-    console.log('Ticket index:', ticketIndex);
-    
     return ticketIndex >= 0 ? ticketIndex : 0;
   }
 
@@ -98,17 +82,14 @@ this.customerInfoForm=this.fb.group({
       eventId: this.checkoutData.event.id,
       ticketTypeIndex: this.getTicketTypeIndex(),
       quantity: this.checkoutData.quantity,
-      customerEmail: this.customerInfo.email,
-      customerName: this.customerInfo.fullName,
-      customerPhone: this.customerInfo.phone
+      customerEmail: this.customerInfoForm.get('email')?.value,
+      customerName: this.customerInfoForm.get('fullName')?.value,
+      customerPhone:this.customerInfoForm.get('phone')?.value
     };
-
-    console.log('Payment request:', paymentRequest);
 
     // Initialize payment
     this.bookingService.initializePayment(paymentRequest).subscribe({
       next: (response: PaymentInitializeResponse) => {
-        console.log('Payment initialization response:', response);
         
         // Update payment breakdown with server response
         this.paymentBreakdown = response.breakdown;
@@ -120,7 +101,6 @@ this.customerInfoForm=this.fb.group({
         window.location.href = response.authorizationUrl;
       },
       error: (error) => {
-        console.error('Payment initialization failed:', error);
         this.isProcessing = false;
         this.toastr.error('Payment initialization failed', 'Please try again');
       }

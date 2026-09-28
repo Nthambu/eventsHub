@@ -14,8 +14,6 @@ export class EventDetail implements OnInit {
   // Event data
   activeEvent: EventData | null = null;
   eventId: string | null = null;
-  
-  // Booking data (self-contained, no booking service dependency)
   selectedTicketType: string = '';
   selectedTicketDetails: TicketType | null = null;
   quantity: number = 1; // Default quantity is 1
@@ -28,25 +26,18 @@ export class EventDetail implements OnInit {
 
   ngOnInit(): void {
     this.eventId = this.route.snapshot.paramMap.get('id');
-   // console.log('Event ID from route:', this.eventId);
-    
-    // Try to get event data from router state first
+    //  get event data from router state first
     const navigation = this.router.getCurrentNavigation();
     const eventData = navigation?.extras?.state?.['eventData'] || 
                      history.state?.eventData;
-
-   // console.log('Event data from state:', eventData);
 
     if (eventData) {
       // Event data passed via router state
       this.activeEvent = eventData;
       this.initializeTicketSelection();
-      console.log('Active event set from state:', this.activeEvent);
     } else {
       // Fallback: fetch event data from API if not passed via state
-      console.log('No event data in state, fetching from API');
       this.getEventFromAPI();
-      // this.router.navigate(['/']);
     }
   }
 
@@ -56,8 +47,6 @@ export class EventDetail implements OnInit {
       const firstTicket = this.activeEvent.ticket_types[0];
       this.selectedTicketType = firstTicket.type;
       this.selectedTicketDetails = firstTicket;
-      console.log('Pre-selected ticket type:', this.selectedTicketType);
-      console.log('Pre-selected ticket details:', this.selectedTicketDetails);
     }
   }
 
@@ -71,10 +60,8 @@ export class EventDetail implements OnInit {
       next: (event) => {
         this.activeEvent = event;
         this.initializeTicketSelection();
-        console.log('Event fetched from API:', this.activeEvent);
       },
       error: (err) => {
-        console.error('Failed to fetch event:', err);
         this.router.navigate(['/']);
       }
     });
@@ -92,7 +79,7 @@ export class EventDetail implements OnInit {
   }
 
   getServiceFee(): number {
-    // Platform fee is now zero as requested
+    // Platform fee is  zero 
     return 0;
   }
 
@@ -138,15 +125,11 @@ export class EventDetail implements OnInit {
 
   getEventCity(): string {
     if (!this.activeEvent) return 'the city';
-    
-    // API provides separate city and venue fields
     return this.activeEvent.city || 'the city';
   }
 
   getTicketTypes(): TicketType[] {
     if (!this.activeEvent) return [];
-    
-    // API uses ticket_types with 'type' field
     return this.activeEvent.ticket_types || [];
   }
 
@@ -164,9 +147,6 @@ export class EventDetail implements OnInit {
   selectTicketType(type: string): void {
     this.selectedTicketType = type;
     this.selectedTicketDetails = this.activeEvent?.ticket_types?.find(r => r.type === type) || null;
-    
-    console.log('Selected ticket type:', type);
-    console.log('Selected ticket details:', this.selectedTicketDetails);
   }
 
   changeQuantity(delta: number): void {
@@ -175,8 +155,6 @@ export class EventDetail implements OnInit {
     
     if (newQuantity >= 1 && newQuantity <= maxQuantity) {
       this.quantity = newQuantity;
-      console.log('Quantity changed to:', this.quantity);
-      console.log('Max available quantity:', maxQuantity);
     }
   }
 
@@ -194,14 +172,10 @@ export class EventDetail implements OnInit {
     
     // Update the signal with checkout data
     this.bookingService.updateCheckoutData(checkoutData);
-    console.log('Proceeding to checkout with data:', checkoutData);
-    
-    // Navigate to checkout (no need for router state since we're using signals)
     this.router.navigate(['/checkout']);
   }
 
   goBackToEvents(): void {
-    console.log('=== Going back to events ===');
     this.router.navigate(['/']);
   }
 }
