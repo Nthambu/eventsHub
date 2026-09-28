@@ -6,59 +6,75 @@
   </div>
 </div>
 
+<!-- Loading/Error State -->
+<div *ngIf="!activeEvent" style="padding: 40px; text-align: center">
+  <div style="font-size: 18px; margin-bottom: 10px">Loading event details...</div>
+  <div style="color: var(--text-secondary)">Please wait while we fetch the event information.</div>
+</div>
+
 <!-- Main Content -->
-<div
-  *ngIf="event && booking"
-  style="padding: 20px 24px; display: grid; grid-template-columns: 1fr 280px; gap: 24px"
->
+<div *ngIf="activeEvent" class="event-detail-container">
   <!-- Event Info -->
-  <div>
+  <div class="event-info">
     <div
       class="ecard-img"
-      [style]="
-        'background: ' + event.gradient + '; height: 180px; font-size: 48px; margin-bottom: 16px'
-      "
+      [style]="'background: ' + getEventGradient() + '; font-size: 48px; margin-bottom: 16px'"
     >
-      {{ event.emoji }}
+      <img *ngIf="activeEvent.image_url" [src]="activeEvent.image_url" alt="Event image" />
+      <span *ngIf="!activeEvent.image_url" style="font-size: 32px">🎵</span>
     </div>
-    <div style="font-size: 20px; font-weight: 500; margin-bottom: 8px">{{ event.title }}</div>
-    <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px">
-      📅 {{ event.date }}
+
+    <div style="font-size: 20px; font-weight: 500; margin-bottom: 8px" class="event-title">
+      {{ activeEvent.name }}
     </div>
-    <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px">
-      📍 {{ event.location }}
+
+    <div
+      style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px"
+      class="event-meta"
+    >
+      📅 {{ formatEventDate(activeEvent.event_date) }}
     </div>
-    <button class="btn btn-outline btn-sm mb-3">📘 View on Facebook</button>
+
+    <div
+      style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px"
+      class="event-meta"
+    >
+      📍 {{ activeEvent.venue }}
+    </div>
+
+    <button class="btn btn-outline btn-sm mb-3" *ngIf="activeEvent.facebook_url">
+      📘 View on Facebook
+    </button>
+
     <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px">About this event</div>
     <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.7">
-      An unforgettable night under the stars on {{ event.location.split(',')[0] }}'s most iconic
-      rooftop. Featuring live DJ sets, cocktails, and breathtaking skyline views. Dress to impress —
-      smart casual required.
+      {{
+        activeEvent.description ||
+          'An unforgettable event experience awaits you at ' +
+            activeEvent.venue +
+            '. Join us for an amazing time!'
+      }}
     </div>
   </div>
 
   <!-- Ticket Selection Card -->
-  <div class="card" style="padding: 16px; align-self: start">
+  <div class="card ticket-card" style="padding: 16px; align-self: start">
     <div style="font-size: 14px; font-weight: 500; margin-bottom: 12px">Select tickets</div>
 
     <!-- Ticket Options -->
     <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px">
       <div
-        *ngFor="let ticket of event.tickets"
+        *ngFor="let ticket of getTicketTypes()"
         class="ticket-opt"
-        [class.selected]="booking.selectedTicketType === ticket.type"
+        [class.selected]="selectedTicketType === ticket.type"
         (click)="selectTicketType(ticket.type)"
       >
         <div>
-          <div style="font-size: 13px; font-weight: 500">{{ ticket.description }}</div>
+          <div style="font-size: 13px; font-weight: 500">
+            {{ ticket.type | titlecase }}
+          </div>
           <div style="font-size: 11px; color: var(--text-secondary)">
-            {{
-              ticket.type === 'GA'
-                ? 'Standing room'
-                : ticket.type === 'VIP'
-                  ? 'Reserved seating'
-                  : 'Special access'
-            }}
+            {{ ticket.description }}
           </div>
         </div>
         <div style="font-size: 14px; font-weight: 500; color: #1a56db">
@@ -68,11 +84,31 @@
     </div>
 
     <!-- Quantity Selector -->
-    <div style="font-size: 12px; font-weight: 500; margin-bottom: 8px">Quantity</div>
+    <div style="font-size: 12px; font-weight: 500; margin-bottom: 8px">
+      Quantity
+      <span
+        *ngIf="selectedTicketDetails?.quantity"
+        style="color: var(--text-secondary); font-weight: 400"
+      >
+        {{ selectedTicketDetails?.quantity }} available
+      </span>
+    </div>
     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px">
-      <button class="btn btn-outline btn-sm" (click)="changeQuantity(-1)">−</button>
-      <span style="font-size: 16px; font-weight: 500">{{ booking.quantity }}</span>
-      <button class="btn btn-outline btn-sm" (click)="changeQuantity(1)">+</button>
+      <button
+        class="btn btn-outline btn-sm"
+        (click)="changeQuantity(-1)"
+        [disabled]="quantity <= 1"
+      >
+        −
+      </button>
+      <span style="font-size: 16px; font-weight: 500">{{ quantity }}</span>
+      <button
+        class="btn btn-outline btn-sm"
+        (click)="changeQuantity(1)"
+        [disabled]="quantity >= (selectedTicketDetails?.quantity ?? 10)"
+      >
+        +
+      </button>
     </div>
 
     <!-- Price Summary -->
@@ -93,10 +129,11 @@
           margin-bottom: 4px;
         "
       >
-        <span>{{ booking.selectedTicketType }} × {{ booking.quantity }}</span>
-        <span>${{ subtotal.toFixed(2) }}</span>
+        <span>{{ selectedTicketType | titlecase }} × {{ quantity }}</span>
+        <span>${{ getSubtotal().toFixed(2) }}</span>
       </div>
       <div
+        *ngIf="getServiceFee() > 0"
         style="
           display: flex;
           justify-content: space-between;
@@ -104,8 +141,8 @@
           margin-bottom: 8px;
         "
       >
-        <span>Service fee</span>
-        <span>${{ serviceFee.toFixed(2) }}</span>
+        <span>Platform fee</span>
+        <span>${{ getServiceFee().toFixed(2) }}</span>
       </div>
       <div
         style="
@@ -117,7 +154,7 @@
         "
       >
         <span>Total</span>
-        <span style="color: #1a56db">${{ total.toFixed(2) }}</span>
+        <span style="color: #1a56db">${{ getTotal().toFixed(2) }}</span>
       </div>
     </div>
 
@@ -126,11 +163,12 @@
       class="btn btn-primary"
       style="width: 100%; justify-content: center; font-size: 13px"
       (click)="proceedToCheckout()"
+      [disabled]="!selectedTicketType"
     >
       🔒 Checkout securely
     </button>
     <div class="text-center mt-2" style="font-size: 11px; color: var(--text-muted)">
-      Secured by Stripe · Non-refundable
+      Secured by Paystack · Non-refundable
     </div>
   </div>
 </div>

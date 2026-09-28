@@ -16,20 +16,46 @@
     </div>
   </div>
 
+  <!-- Loading State -->
+  <div *ngIf="loading" style="text-align: center; padding: 40px">
+    <i class="pi pi-spin pi-spinner" style="font-size: 2rem"></i>
+  </div>
+
+  <!-- No Events State -->
+  <div *ngIf="!loading && events.length === 0" style="text-align: center; padding: 40px">
+    <div style="font-size: 18px; margin-bottom: 8px">No Events Found</div>
+    <div style="font-size: 14px; color: var(--text-secondary)">
+      Check back later for upcoming events!
+    </div>
+  </div>
+
   <!-- Events Grid -->
   <div
+    *ngIf="!loading && events.length > 0"
     style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px"
   >
-    <div *ngFor="let event of events" class="card">
-      <div class="ecard-img" [style]="'background: ' + event.gradient">{{ event.emoji }}</div>
+    <div *ngFor="let event of events; index as i" class="card">
+      <!-- Event Image -->
+      <div class="ecard-img" [style]="'background: ' + getEventGradient(i)">
+        <img
+          *ngIf="event.image_url"
+          [src]="event.image_url"
+          alt="event image"
+          style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px 12px 0 0"
+        />
+        <!-- Fallback emoji if no image -->
+        <span *ngIf="!event.image_url" style="font-size: 32px">🎵</span>
+      </div>
+
+      <!-- Event Content -->
       <div class="ecard-body">
-        <div class="ecard-title">{{ event.title }}</div>
+        <div class="ecard-title">{{ event.name }}</div>
         <div class="ecard-meta">
-          📅 {{ event.date.split(' · ')[0] }} · {{ event.date.split(' · ')[1] }}<br />
-          {{ event.location }}
+          📅 {{ formatEventDate(event.event_date) }}<br />
+          📍 {{ event.venue }}
         </div>
         <div style="display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap">
-          <span *ngFor="let ticket of event.tickets" class="tag tag-blue">
+          <span *ngFor="let ticket of event.ticket_types" class="tag tag-blue">
             {{ ticket.type }} — ${{ ticket.price.toFixed(2) }}
           </span>
         </div>

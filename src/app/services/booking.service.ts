@@ -1,46 +1,34 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
-
-export interface TicketType {
-  type: string;
-  price: number;
-  description: string;
-}
-
-export interface EventData {
-  id: number;
-  title: string;
-  emoji: string;
-  date: string;
-  location: string;
-  tickets: TicketType[];
-  gradient: string;
-}
-
-export interface BookingData {
-  event: EventData | null;
-  selectedTicketType: string;
-  quantity: number;
-  customerInfo: {
-    fullName: string;
-    email: string;
-    phone: string;
-  };
-  billingAddress: {
-    street: string;
-    city: string;
-    state: string;
-    zip: string;
-  };
-}
+import { Injectable, signal } from '@angular/core';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { BookingData, EventData, PaymentInitializeRequest, PaymentInitializeResponse } from '../data/events-dto';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
+import { ToastrService } from 'ngx-toastr';
 
 @Injectable({
   providedIn: 'root'
 })
 export class BookingService {
-  private bookingData = new BehaviorSubject<BookingData>({
+  private readonly baseUrl: string = environment.baseUrl;
+  // 1. Keep the writable signal private so components can't mutate it directly
+  private selectedEventData = signal<any>({});
+
+  // 2. Expose a read-only version for components to safely consume
+  public selectedEventData$ = this.selectedEventData.asReadonly();
+
+  constructor(private http: HttpClient, private readonly toastr: ToastrService) {}
+
+  // 3. Provide methods to update the state
+  updateCheckoutData(newCheckoutData: any): void {
+    this.selectedEventData.set(newCheckoutData);
+  }
+  getCurrentBooking(): BookingData {
+    return this.bookingData.value;
+  }
+
+  private readonly bookingData = new BehaviorSubject<BookingData>({
     event: null,
-    selectedTicketType: 'GA',
+    selectedTicketType: 'General',
     quantity: 2,
     customerInfo: {
       fullName: 'Jane Smith',
@@ -57,72 +45,28 @@ export class BookingService {
 
   booking$ = this.bookingData.asObservable();
 
-  events: EventData[] = [
-    {
-      id: 1,
-      title: 'Summer Rooftop Party',
-      emoji: '🎵',
-      date: 'Saturday, August 15, 2025 · 8:00 PM',
-      location: 'Skyline Lounge, Chicago, IL',
-      tickets: [
-        { type: 'GA', price: 25.00, description: 'General Admission' },
-        { type: 'VIP', price: 75.00, description: 'VIP Experience' }
-      ],
-      gradient: 'linear-gradient(135deg, #1a56db22, #1a56db44)'
-    },
-    {
-      id: 2,
-      title: 'Comedy Night Live',
-      emoji: '🎤',
-      date: 'Friday, September 5, 2025 · 7:00 PM',
-      location: 'Laugh Factory, New York, NY',
-      tickets: [
-        { type: 'Standard', price: 35.00, description: 'Standard Seating' }
-      ],
-      gradient: 'linear-gradient(135deg, #7c3aed22, #7c3aed44)'
-    },
-    {
-      id: 3,
-      title: 'New Year\'s Eve Gala',
-      emoji: '🎉',
-      date: 'Wednesday, December 31, 2025 · 9:00 PM',
-      location: 'Grand Ballroom, Miami, FL',
-      tickets: [
-        { type: 'Early Bird', price: 99.00, description: 'Early Bird Special' },
-        { type: 'Table', price: 299.00, description: 'Reserved Table' }
-      ],
-      gradient: 'linear-gradient(135deg, #dc262622, #dc262644)'
-    }
-  ];
-
   updateBooking(updates: Partial<BookingData>): void {
     const current = this.bookingData.value;
     this.bookingData.next({ ...current, ...updates });
   }
 
-  getCurrentBooking(): BookingData {
-    return this.bookingData.value;
+  getEvents(): Observable<EventData[]> {
+    return this.http.get<EventData[]>(`${this.baseUrl}/events`);
   }
 
-  getEventById(id: number): EventData | undefined {
-    return this.events.find(event => event.id === id);
+  getEventById(id: string): Observable<EventData> {
+    return this.http.get<EventData>(`${this.baseUrl}/events/${id}`);
   }
 
-  getSubtotal(): number {
-    const booking = this.getCurrentBooking();
-    if (!booking.event) return 0;
-    
-    const ticket = booking.event.tickets.find(t => t.type === booking.selectedTicketType);
-    return (ticket?.price || 0) * booking.quantity;
+  submitBooking(bookingData: BookingData): Observable<any> {
+    return this.http.post(`${this.baseUrl}/bookings`, bookingData);
   }
 
-  getServiceFee(): number {
-    return this.getSubtotal() * 0.0796;
+  // Payment API method
+  initializePayment(paymentRequest: PaymentInitializeRequest): Observable<PaymentInitializeResponse> {
+    return this.http.post<PaymentInitializeResponse>(`${this.baseUrl}/checkout/initialize`, paymentRequest);
   }
-
-  getTotal(): number {
-    return this.getSubtotal() + this.getServiceFee();
-  }
+ 
 
   generateOrderNumber(): string {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -131,5 +75,26 @@ export class BookingService {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return result;
+  }
+
+  // Helper method to format event date for display
+  formatEventDate(dateString: string): string {
+    const date = new Date(dateString);
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      month: 'long', 
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    };
+    
+    return date.toLocaleDateString('en-US', options);
+  }
+  handleApiError(err:any){
+     this.toastr.error('oops!',err.error.message || err.error.status || 
+        'server error! Please try again'
+      )
   }
 }
