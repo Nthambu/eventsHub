@@ -45,7 +45,8 @@ initializeCustomerForm():void{
 this.customerInfoForm=this.fb.group({
   fullName:['',Validators.required],
   email:['',Validators.required],
-  phone:['',Validators.required]
+  phone:['',Validators.required],
+  policyStatus:['',Validators.required]
 
 })
 }
@@ -60,23 +61,28 @@ this.customerInfoForm=this.fb.group({
   }
 
   private getTicketTypeIndex(): number {
-    if (!this.checkoutData || !this.checkoutData.event || !this.checkoutData.selectedTicketType) return 0;
+    if (!this.checkoutData?.event || !this.checkoutData.selectedTicketType) return 0;
     
     // Find the index of the selected ticket type in the event's ticket_types array
     const ticketIndex = this.checkoutData.event.ticket_types.findIndex(
       (ticket: any) => ticket.type === this.checkoutData.selectedTicketType
     );
-    return ticketIndex >= 0 ? ticketIndex : 0;
+    return Math.max(ticketIndex, 0);
   }
 
   processPayment(): void {
-    if (!this.checkoutData || !this.checkoutData.event) {
+    if (!this.checkoutData?.event) {
       this.toastr.error('No event data found');
       return;
     }
-
+    this.customerInfoForm.markAllAsTouched();
+  const  checkedPolicy=this.customerInfoForm.get('policyStatus')?.value;
+  if(!checkedPolicy){
+     this.toastr.error('Please agree to our terms of service!');
+     return;
+  }
     this.isProcessing = true;
-    
+    console.log('is checked',this.customerInfoForm.get('policyStatus')?.value)
     // Prepare payment request
     const paymentRequest: PaymentInitializeRequest = {
       eventId: this.checkoutData.event.id,
