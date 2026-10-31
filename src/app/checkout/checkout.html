@@ -6,229 +6,166 @@
   </div>
 </div>
 
-<!-- Main Content -->
-<div style="padding: 20px 24px">
-  <form [formGroup]="customerInfoForm">
-    <div style="font-size: 18px; font-weight: 500; margin-bottom: 16px">🔒 Secure checkout</div>
+<!-- No-data guard -->
+<div *ngIf="!checkoutData || !checkoutData.event" class="no-data-state">
+  <div class="no-data-icon">🎫</div>
+  <div class="no-data-title">No Event Selected</div>
+  <div class="no-data-sub">Please select an event to continue with checkout.</div>
+  <button class="btn btn-primary mt-3" (click)="router.navigate(['/'])">Browse Events</button>
+</div>
 
-    <!-- No Data State -->
-    <div
-      *ngIf="!checkoutData || !checkoutData.event"
-      style="text-align: center; padding: 60px 20px"
-    >
-      <div style="font-size: 48px; margin-bottom: 16px">🎫</div>
-      <div style="font-size: 18px; font-weight: 500; margin-bottom: 8px">No Event Selected</div>
-      <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 20px">
-        Please select an event to proceed with checkout
+<!-- Main checkout -->
+<div *ngIf="checkoutData && checkoutData.event" class="co-page">
+
+  <!-- Step bar -->
+  <div class="steps">
+    <div class="step-item">
+      <div class="step-circle done">✓</div>
+      <span class="step-label done-label">Cart</span>
+    </div>
+    <div class="step-line done"></div>
+    <div class="step-item">
+      <div class="step-circle done">✓</div>
+      <span class="step-label done-label">Event</span>
+    </div>
+    <div class="step-line done"></div>
+    <div class="step-item">
+      <div class="step-circle active">3</div>
+      <span class="step-label active-label">Payment</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item">
+      <div class="step-circle todo">4</div>
+      <span class="step-label">Confirm</span>
+    </div>
+  </div>
+
+  <form [formGroup]="customerInfoForm" (ngSubmit)="processPayment()" novalidate>
+
+    <!-- Order Summary -->
+    <div class="co-card mb-3">
+      <div class="co-card-header">Order summary</div>
+
+      <div class="summary-event-name">{{ checkoutData.event.name }}</div>
+      <div class="summary-meta">{{ checkoutData.selectedTicketType | titlecase }} × {{ checkoutData.quantity }}</div>
+
+      <div class="summary-row">
+        <span>Subtotal</span>
+        <span>{{ getCurrency() }} {{ (paymentBreakdown?.subtotal || checkoutData.subtotal || 0).toFixed(2) }}</span>
       </div>
-      <button class="btn btn-primary" (click)="router.navigate(['/'])">Browse Events</button>
+      <div class="summary-row" *ngIf="(paymentBreakdown?.serviceFee || checkoutData.serviceFee || 0) > 0">
+        <span>Service fee</span>
+        <span>{{ getCurrency() }} {{ (paymentBreakdown?.serviceFee || checkoutData.serviceFee || 0).toFixed(2) }}</span>
+      </div>
+      <div class="summary-total">
+        <span>Total</span>
+        <span class="total-amount">{{ getCurrency() }} {{ getTotal().toFixed(2) }}</span>
+      </div>
     </div>
 
-    <!-- Checkout Content -->
-    <div *ngIf="checkoutData && checkoutData.event">
-      <!-- Steps -->
-      <div class="steps">
-        <div class="step-item">
-          <div class="step-circle done">✓</div>
-          <span style="color: var(--text-secondary)">Cart</span>
-        </div>
-        <div class="step-line done"></div>
-        <div class="step-item">
-          <div class="step-circle done">✓</div>
-          <span style="color: var(--text-secondary)">Account</span>
-        </div>
-        <div class="step-line done"></div>
-        <div class="step-item">
-          <div class="step-circle active">3</div>
-          <span style="font-weight: 500">Payment</span>
-        </div>
-        <div class="step-line"></div>
-        <div class="step-item">
-          <div class="step-circle todo">4</div>
-          <span style="color: var(--text-muted)">Confirm</span>
-        </div>
-      </div>
+    <!-- Customer Details -->
+    <div class="co-card mb-3">
+      <div class="co-card-header">Your details</div>
 
-      <!-- Summary -->
-      <div class="card" style="padding: 14px; margin-bottom: 14px">
-        <div
-          style="
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--text-secondary);
-            font-weight: 500;
-            margin-bottom: 10px;
-          "
-        >
-          Order summary
-        </div>
-        <div style="font-size: 13px; font-weight: 500">
-          {{ checkoutData.event.name }}
-        </div>
-        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px">
-          {{ checkoutData.selectedTicketType }} × {{ checkoutData.quantity }}
-        </div>
-        <div
-          style="
-            font-size: 12px;
-            display: flex;
-            justify-content: space-between;
-            color: var(--text-secondary);
-            margin-bottom: 2px;
-          "
-        >
-          <span>Subtotal</span>
-          <span>${{ (paymentBreakdown?.subtotal || checkoutData.subtotal || 0).toFixed(2) }}</span>
-        </div>
-        <div
-          style="
-            font-size: 12px;
-            display: flex;
-            justify-content: space-between;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-          "
-        >
-          <span>Service fee</span>
-          <span
-            >${{ (paymentBreakdown?.serviceFee || checkoutData.serviceFee || 0).toFixed(2) }}</span
-          >
-        </div>
-        <div
-          style="
-            font-size: 13px;
-            font-weight: 500;
-            display: flex;
-            justify-content: space-between;
-            border-top: 0.5px solid var(--border);
-            padding-top: 8px;
-          "
-        >
-          <span>Total</span>
-          <span style="color: #1a56db"
-            >${{ (paymentBreakdown?.total || checkoutData.total || 0).toFixed(2) }}</span
-          >
-        </div>
-      </div>
-
-      <!-- Customer -->
-      <div class="card" style="padding: 14px; margin-bottom: 14px">
-        <div
-          style="
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--text-secondary);
-            font-weight: 500;
-            margin-bottom: 10px;
-          "
-        >
-          Your details
-        </div>
-
-        <div class="row mb-2">
-          <div class="col-12 col-md-6 col-lg-6">
-            <div class="form-group">
-              <label for="fullName" class="form-label">Full Name</label>
-              <input type="text" id="fullName" class="form-control" formControlName="fullName" />
-              <div
-                *ngIf="
-                  customerInfoForm.get('fullName')?.invalid &&
-                  (customerInfoForm.get('fullName')?.touched ||
-                    customerInfoForm.get('fullName')?.dirty)
-                "
-              >
-                <div *ngIf="customerInfoForm.get('fullName')?.hasError('required')">
-                  <span class="text-danger"> FullName is required!</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-12 col-md-6 col-lg-6">
-            <div class="form-group">
-              <label for="email" class="form-label">Email</label>
-              <input type="text" id="email" class="form-control" formControlName="email" />
-              <div
-                *ngIf="
-                  customerInfoForm.get('email')?.invalid &&
-                  (customerInfoForm.get('email')?.touched || customerInfoForm.get('email')?.dirty)
-                "
-              >
-                <div *ngIf="customerInfoForm.get('email')?.hasError('required')">
-                  <span class="text-danger"> Email is required!</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="row mb-2">
-          <div class="col-12 col-md-6 col-lg-6">
-            <div class="form-group">
-              <label for="phone" class="form-label">Phone</label>
-              <input type="text" id="phone" class="form-control" formControlName="phone" />
-              <div
-                *ngIf="
-                  customerInfoForm.get('phone')?.invalid &&
-                  (customerInfoForm.get('phone')?.touched || customerInfoForm.get('phone')?.dirty)
-                "
-              >
-                <div *ngIf="customerInfoForm.get('phone')?.hasError('required')">
-                  <span class="text-danger">Phone is required!</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- Policy -->
-      <div
-        style="
-          display: flex;
-          gap: 8px;
-          align-items: flex-start;
-          padding: 10px 12px;
-          background: #fffbeb;
-          border: 0.5px solid #f59e0b;
-          border-radius: var(--radius);
-        "
-      >
-        <div class="form-check">
+      <div class="field-row">
+        <div class="co-field">
+          <label class="co-label" for="fullName">Full Name</label>
           <input
-            type="checkbox"
-            formControlName="policyStatus"
-            class="form-check-input"
-            style="border: 1px solid grey"
-            id="policyCheck"
+            type="text"
+            id="fullName"
+            class="co-input"
+            [class.co-input-error]="customerInfoForm.get('fullName')?.invalid && customerInfoForm.get('fullName')?.touched"
+            formControlName="fullName"
+            placeholder="Jane Doe"
+            autocomplete="name"
           />
+          <span
+            class="field-error"
+            *ngIf="customerInfoForm.get('fullName')?.invalid && customerInfoForm.get('fullName')?.touched"
+          >
+            <ng-container *ngIf="customerInfoForm.get('fullName')?.hasError('required')">Full name is required.</ng-container>
+            <ng-container *ngIf="customerInfoForm.get('fullName')?.hasError('minlength')">Must be at least 2 characters.</ng-container>
+          </span>
+        </div>
 
-          <label class="form-check-label" for="policyCheck">
-            I understand this purchase is <strong>non-refundable</strong> and agree to the refund
-            policy.
-          </label>
+        <div class="co-field">
+          <label class="co-label" for="email">Email address</label>
+          <input
+            type="email"
+            id="email"
+            class="co-input"
+            [class.co-input-error]="customerInfoForm.get('email')?.invalid && customerInfoForm.get('email')?.touched"
+            formControlName="email"
+            placeholder="jane@example.com"
+            autocomplete="email"
+          />
+          <span
+            class="field-error"
+            *ngIf="customerInfoForm.get('email')?.invalid && customerInfoForm.get('email')?.touched"
+          >
+            <ng-container *ngIf="customerInfoForm.get('email')?.hasError('required')">Email is required.</ng-container>
+            <ng-container *ngIf="customerInfoForm.get('email')?.hasError('email')">Enter a valid email address.</ng-container>
+          </span>
         </div>
       </div>
-      <div class="mt-3">
-        <button
-          class="btn btn-primary"
-          style="justify-content: center; font-size: 14px; padding: 12px"
-          (click)="processPayment()"
-          [disabled]="isProcessing"
-        >
-          <span *ngIf="!isProcessing"
-            >🔒 Pay ${{
-              (paymentBreakdown?.total || checkoutData.total || 0).toFixed(2)
-            }}
-            securely</span
-          >
-          <span *ngIf="isProcessing">Processing... 🔄</span>
-        </button>
 
-        <div class="text-center" style="font-size: 11px; color: var(--text-muted)">
-          🛡️ 256-bit SSL · PCI compliant
-        </div>
+      <div class="co-field">
+        <label class="co-label" for="phone">Phone number</label>
+        <input
+          type="tel"
+          id="phone"
+          class="co-input"
+          [class.co-input-error]="customerInfoForm.get('phone')?.invalid && customerInfoForm.get('phone')?.touched"
+          formControlName="phone"
+          placeholder="+254 700 000 000"
+          autocomplete="tel"
+        />
+        <span
+          class="field-error"
+          *ngIf="customerInfoForm.get('phone')?.invalid && customerInfoForm.get('phone')?.touched"
+        >
+          <ng-container *ngIf="customerInfoForm.get('phone')?.hasError('required')">Phone number is required.</ng-container>
+          <ng-container *ngIf="customerInfoForm.get('phone')?.hasError('pattern')">Enter a valid phone number.</ng-container>
+        </span>
       </div>
     </div>
+
+    <!-- Policy -->
+    <div class="policy-box">
+      <label class="policy-label">
+        <input
+          type="checkbox"
+          class="policy-check"
+          formControlName="policyStatus"
+        />
+        <span>
+          I understand this purchase is <strong>non-refundable</strong> and agree to the refund policy.
+        </span>
+      </label>
+      <span
+        class="field-error"
+        *ngIf="customerInfoForm.get('policyStatus')?.invalid && customerInfoForm.get('policyStatus')?.touched"
+      >
+        You must agree to the refund policy.
+      </span>
+    </div>
+
+    <!-- Pay Button -->
+    <div class="mt-3">
+      <button
+        type="submit"
+        class="btn btn-primary pay-btn"
+        [disabled]="isProcessing"
+      >
+        <ng-container *ngIf="!isProcessing">
+          🔒 Pay {{ getCurrency() }} {{ getTotal().toFixed(2) }} securely
+        </ng-container>
+        <ng-container *ngIf="isProcessing">
+          <span class="btn-spinner"></span> Processing…
+        </ng-container>
+      </button>
+      <div class="pay-trust">🛡️ 256-bit SSL encryption · Powered by Paystack · PCI DSS compliant</div>
+    </div>
+
   </form>
 </div>
-<!-- End main content -->

@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { BookingService } from '../services/booking.service';
 import { PaymentInitializeRequest, PaymentInitializeResponse } from '../data/events-dto';
 import { ToastrService } from 'ngx-toastr';
-import { FormBuilder, FormGroup, Validators,ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-checkout',
@@ -12,108 +13,169 @@ import { FormBuilder, FormGroup, Validators,ReactiveFormsModule } from '@angular
   templateUrl: './checkout.html',
   styleUrl: './checkout.css',
 })
-export class Checkout implements OnInit {
-  // Checkout data from signal (initialized in ngOnInit)
+export class Checkout implements OnInit, OnDestroy {
   checkoutData: any;
-  
-  // Payment state
   isProcessing = false;
   paymentBreakdown: any = null;
-customerInfoForm!:FormGroup;
+  customerInfoForm!: FormGroup;
+
+  // Bound reference kept so we can removeEventListener on destroy
+  private readonly onPageShow = (e: PageTransitionEvent) => {
+    // persisted=true means the page was restored from bfcache
+    // persisted=false means a normal load — ngOnInit already ran, skip
+    if (e.persisted) {
+      this.isProcessing = false;
+    }
+  };
+
   constructor(
     public readonly router: Router,
     private readonly bookingService: BookingService,
     private readonly toastr: ToastrService,
-    private fb:FormBuilder
+    private fb: FormBuilder,
+    @Inject(PLATFORM_ID) private platformId: Object,
   ) {}
 
   ngOnInit(): void {
     this.initializeCustomerForm();
-    // Initialize checkout data from signal
     this.checkoutData = this.bookingService.selectedEventData$();
-    // Check if we have checkout data
+
+    // Always reset on init — covers normal navigation and hard reloads
+    this.isProcessing = false;
+
+    if (isPlatformBrowser(this.platformId)) {
+      // bfcache restore: browser back from Paystack brings the frozen page back
+      // with isProcessing still true — pageshow fires and resets it
+      window.addEventListener('pageshow', this.onPageShow);
+
+      // Also clear any stale reference left from the previous attempt
+      localStorage.removeItem('paymentReference');
+    }
+
     if (!this.checkoutData || !this.checkoutData.event) {
-      this.toastr.warning('No event selected', 'Please select an event first');
+      this.toastr.warning('Please select an event first', 'No event selected');
       this.router.navigate(['/']);
       return;
     }
 
-    // Calculate breakdown from checkout data
-    this.calculateBreakdown();
-  }
-initializeCustomerForm():void{
-this.customerInfoForm=this.fb.group({
-  fullName:['',Validators.required],
-  email:['',Validators.required],
-  phone:['',Validators.required],
-  policyStatus:['',Validators.required]
+    this.paymentBreakdown = {
+      subtotal: this.checkoutData.subtotal || 0,
+      serviceFee: this.checkoutData.serviceFee || 0,
+      total: this.checkoutData.total || 0,
+    };
 
-})
-}
-  private calculateBreakdown(): void {
-    if (this.checkoutData) {
-      this.paymentBreakdown = {
-        subtotal: this.checkoutData.subtotal || 0,
-        serviceFee: this.checkoutData.serviceFee || 0,
-        total: this.checkoutData.total || 0
-      };
+    // Restore form values if customer already filled them before being sent to Paystack
+    if (this.checkoutData.customerInfo?.fullName) {
+      this.customerInfoForm.patchValue({
+        fullName: this.checkoutData.customerInfo.fullName,
+        email: this.checkoutData.customerInfo.email,
+        phone: this.checkoutData.customerInfo.phone,
+      });
     }
+  }
+
+  ngOnDestroy(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      window.removeEventListener('pageshow', this.onPageShow);
+    }
+  }
+
+  initializeCustomerForm(): void {
+    this.customerInfoForm = this.fb.group({
+      fullName: ['', [Validators.required, Validators.minLength(2)]],
+      email: ['', [Validators.required, Validators.email]],
+      phone: ['', [Validators.required, Validators.pattern(/^[+\d][\d\s\-()]{6,}$/)]],
+      policyStatus: [false, Validators.requiredTrue],
+    });
   }
 
   private getTicketTypeIndex(): number {
+    if (this.checkoutData?.selectedTicketIndex !== undefined) {
+      return this.checkoutData.selectedTicketIndex;
+    }
     if (!this.checkoutData?.event || !this.checkoutData.selectedTicketType) return 0;
-    
-    // Find the index of the selected ticket type in the event's ticket_types array
-    const ticketIndex = this.checkoutData.event.ticket_types.findIndex(
-      (ticket: any) => ticket.type === this.checkoutData.selectedTicketType
+    const idx = this.checkoutData.event.ticket_types.findIndex(
+      (t: any) => t.type === this.checkoutData.selectedTicketType,
     );
-    return Math.max(ticketIndex, 0);
+    return Math.max(idx, 0);
   }
 
   processPayment(): void {
-    if (!this.checkoutData?.event) {
-      this.toastr.error('No event data found');
+    this.customerInfoForm.markAllAsTouched();
+
+    if (this.customerInfoForm.invalid) {
+      if (this.customerInfoForm.get('policyStatus')?.invalid) {
+        this.toastr.error('Please agree to the refund policy to continue.');
+      }
       return;
     }
-    this.customerInfoForm.markAllAsTouched();
-  const  checkedPolicy=this.customerInfoForm.get('policyStatus')?.value;
-  if(!checkedPolicy){
-     this.toastr.error('Please agree to our terms of service!');
-     return;
-  }
+
+    if (!this.checkoutData?.event) {
+      this.toastr.error('No event data found — please go back and select an event.');
+      return;
+    }
+
     this.isProcessing = true;
-    console.log('is checked',this.customerInfoForm.get('policyStatus')?.value)
-    // Prepare payment request
+
     const paymentRequest: PaymentInitializeRequest = {
       eventId: this.checkoutData.event.id,
       ticketTypeIndex: this.getTicketTypeIndex(),
       quantity: this.checkoutData.quantity,
-      customerEmail: this.customerInfoForm.get('email')?.value,
-      customerName: this.customerInfoForm.get('fullName')?.value,
-      customerPhone:this.customerInfoForm.get('phone')?.value
+      customerEmail: this.customerInfoForm.value.email.trim(),
+      customerName: this.customerInfoForm.value.fullName.trim(),
+      customerPhone: this.customerInfoForm.value.phone.trim(),
     };
 
-    // Initialize payment
+    // Persist customer info in context so the Success page can display it
+    this.bookingService.updateCheckoutData({
+      ...this.checkoutData,
+      customerEmail: paymentRequest.customerEmail,
+      customerInfo: {
+        fullName: paymentRequest.customerName,
+        email: paymentRequest.customerEmail,
+        phone: paymentRequest.customerPhone,
+      },
+    });
+
     this.bookingService.initializePayment(paymentRequest).subscribe({
       next: (response: PaymentInitializeResponse) => {
-        
-        // Update payment breakdown with server response
         this.paymentBreakdown = response.breakdown;
-        
-        // Store payment reference for later use
-        localStorage.setItem('paymentReference', response.reference);
-        
-        // Redirect to Paystack
-        window.location.href = response.authorizationUrl;
+
+        this.bookingService.updateCheckoutData({
+          ...this.bookingService.selectedEventData$(),
+          total: response.breakdown.total,
+          currency: response.breakdown.currency,
+          breakdown: response.breakdown,
+        });
+
+        if (isPlatformBrowser(this.platformId)) {
+          localStorage.setItem('paymentReference', response.reference);
+          // Navigate to Paystack — page unloads immediately in normal conditions.
+          // The pageshow listener above handles the bfcache restore case.
+          window.location.href = response.authorizationUrl;
+        }
       },
-      error: (error) => {
+      error: (err) => {
         this.isProcessing = false;
-        this.toastr.error('Payment initialization failed', 'Please try again');
-      }
+        const msg = err?.error?.message ?? 'Payment initialization failed — please try again.';
+        this.toastr.error(msg, 'Payment error');
+      },
     });
   }
 
   goBack(): void {
-    this.router.navigate(['/event', this.checkoutData?.event?.id]);
+    if (this.checkoutData?.event?.id) {
+      this.router.navigate(['/event', this.checkoutData.event.id]);
+    } else {
+      this.router.navigate(['/']);
+    }
+  }
+
+  getTotal(): number {
+    return this.paymentBreakdown?.total ?? this.checkoutData?.total ?? 0;
+  }
+
+  getCurrency(): string {
+    return this.paymentBreakdown?.currency ?? this.checkoutData?.breakdown?.currency ?? 'USD';
   }
 }

@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BookingService } from '../services/booking.service';
@@ -11,42 +12,42 @@ import { EventData, TicketType } from '../data/events-dto';
   styleUrl: './event-detail.css',
 })
 export class EventDetail implements OnInit {
-  // Event data
   activeEvent: EventData | null = null;
   eventId: string | null = null;
-  selectedTicketType: string = '';
+  selectedTicketIndex: number = 0;        // track by index — unambiguous
+  selectedTicketType: string = '';         // kept for checkout compatibility
   selectedTicketDetails: TicketType | null = null;
-  quantity: number = 1; // Default quantity is 1
+  quantity: number = 1;
   
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private bookingService: BookingService
+    private bookingService: BookingService,
+    @Inject(PLATFORM_ID) private platformId: Object,
   ) {}
 
   ngOnInit(): void {
     this.eventId = this.route.snapshot.paramMap.get('id');
-    //  get event data from router state first
-    const navigation = this.router.getCurrentNavigation();
-    const eventData = navigation?.extras?.state?.['eventData'] || 
-                     history.state?.eventData;
 
-    if (eventData) {
-      // Event data passed via router state
-      this.activeEvent = eventData;
+    // history is a browser-only API — guard against SSR
+    let stateEventData: EventData | null = null;
+    if (isPlatformBrowser(this.platformId)) {
+      stateEventData =
+        this.router.getCurrentNavigation()?.extras?.state?.['eventData'] ??
+        (history.state?.eventData ?? null);
+    }
+
+    if (stateEventData && stateEventData.id === this.eventId) {
+      this.activeEvent = stateEventData;
       this.initializeTicketSelection();
     } else {
-      // Fallback: fetch event data from API if not passed via state
       this.getEventFromAPI();
     }
   }
 
   private initializeTicketSelection(): void {
-    if (this.activeEvent && this.activeEvent.ticket_types && this.activeEvent.ticket_types.length > 0) {
-      // Pre-select the first ticket type from API response
-      const firstTicket = this.activeEvent.ticket_types[0];
-      this.selectedTicketType = firstTicket.type;
-      this.selectedTicketDetails = firstTicket;
+    if (this.activeEvent?.ticket_types?.length) {
+      this.selectTicketByIndex(0);
     }
   }
 
@@ -69,13 +70,8 @@ export class EventDetail implements OnInit {
 
   // Calculation methods
   getSubtotal(): number {
-    if (!this.activeEvent || !this.selectedTicketType) return 0;
-    
-    const selectedTicket = this.getTicketTypes().find(t => 
-      t.type === this.selectedTicketType
-    );
-    
-    return (selectedTicket?.price || 0) * this.quantity;
+    // Use selectedTicketDetails directly — already set by selectTicketByIndex()
+    return (this.selectedTicketDetails?.price ?? 0) * this.quantity;
   }
 
   getServiceFee(): number {
@@ -144,9 +140,17 @@ export class EventDetail implements OnInit {
   }
 
   // User interaction methods
+  selectTicketByIndex(index: number): void {
+    const ticket = this.activeEvent?.ticket_types?.[index];
+    if (!ticket) return;
+    this.selectedTicketIndex = index;
+    this.selectedTicketType = ticket.type;
+    this.selectedTicketDetails = ticket;
+  }
+
   selectTicketType(type: string): void {
-    this.selectedTicketType = type;
-    this.selectedTicketDetails = this.activeEvent?.ticket_types?.find(r => r.type === type) || null;
+    const index = this.activeEvent?.ticket_types?.findIndex(t => t.type === type) ?? 0;
+    this.selectTicketByIndex(index);
   }
 
   changeQuantity(delta: number): void {
@@ -159,18 +163,16 @@ export class EventDetail implements OnInit {
   }
 
   proceedToCheckout(): void {
-    // Prepare checkout data
     const checkoutData = {
       event: this.activeEvent,
       selectedTicketType: this.selectedTicketType,
+      selectedTicketIndex: this.selectedTicketIndex,
       quantity: this.quantity,
       subtotal: this.getSubtotal(),
       serviceFee: this.getServiceFee(),
       total: this.getTotal(),
-      ticketDetails: this.getSelectedTicketDetails()
+      ticketDetails: this.selectedTicketDetails,
     };
-    
-    // Update the signal with checkout data
     this.bookingService.updateCheckoutData(checkoutData);
     this.router.navigate(['/checkout']);
   }

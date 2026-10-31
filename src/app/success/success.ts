@@ -1,7 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-import { BookingService,  } from '../services/booking.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { BookingService } from '../services/booking.service';
+import { Subscription } from 'rxjs';
+
+type PageState = 'verifying' | 'success' | 'failed' | 'no-data';
 
 @Component({
   selector: 'app-success',
@@ -9,73 +13,114 @@ import { BookingService,  } from '../services/booking.service';
   templateUrl: './success.html',
   styleUrl: './success.css',
 })
-export class Success implements OnInit {
- // booking: BookingData | null = null;
-  orderNumber: string = '';
-  booking:any;
-total:number=10;
+export class Success implements OnInit, OnDestroy {
+  pageState: PageState = 'verifying';
+  errorMessage = '';
+
+  orderNumber = '';
+  total = 0;
+  currency = 'USD';
+  booking: any = null;
+
+  private sub?: Subscription;
+
   constructor(
     private router: Router,
-    private bookingService: BookingService
+    private route: ActivatedRoute,
+    private bookingService: BookingService,
+    @Inject(PLATFORM_ID) private platformId: Object,
   ) {}
 
   ngOnInit(): void {
-    this.bookingService.booking$.subscribe(booking => {
-      this.booking = booking;
-      
-      // Redirect if no event is selected
-      if (!booking.event) {
-        this.router.navigate(['/']);
-      }
-    });
-    
-    this.orderNumber = this.bookingService.generateOrderNumber();
+    // Query params are available on both server and browser
+    const ref =
+      this.route.snapshot.queryParamMap.get('reference') ||
+      this.route.snapshot.queryParamMap.get('trxref') ||
+      // localStorage is browser-only
+      (isPlatformBrowser(this.platformId) ? localStorage.getItem('paymentReference') : null);
+
+    if (!ref) {
+      this.pageState = 'no-data';
+      return;
+    }
+
+    this.verifyPayment(ref);
   }
 
-  // get subtotal(): number {
-  //   return this.bookingService.getSubtotal();
-  // }
+  ngOnDestroy(): void {
+    this.sub?.unsubscribe();
+  }
 
-  // get serviceFee(): number {
-  //   return this.bookingService.getServiceFee();
-  // }
+  private verifyPayment(reference: string): void {
+    this.pageState = 'verifying';
 
-  // get total(): number {
-  //   return this.bookingService.getTotal();
-  // }
+    this.sub = this.bookingService.verifyPayment({ reference }).subscribe({
+      next: (res) => {
+        this.orderNumber = res.orderNumber;
+
+        const ctx = this.bookingService.selectedEventData$();
+        this.booking = ctx && ctx.event ? ctx : null;
+        this.total = ctx?.total ?? 0;
+        this.currency = ctx?.breakdown?.currency ?? ctx?.currency ?? 'USD';
+
+        if (ctx?.event) {
+          this.bookingService.updateBookingConfirmation({
+            event: ctx.event,
+            selectedTicketType: ctx.selectedTicketType,
+            quantity: ctx.quantity,
+            customerInfo: ctx.customerInfo ?? { fullName: '', email: ctx.customerEmail ?? '', phone: '' },
+            orderNumber: res.orderNumber,
+            total: ctx.total,
+            currency: this.currency,
+            paymentReference: reference,
+          });
+        }
+
+        if (isPlatformBrowser(this.platformId)) {
+          localStorage.removeItem('paymentReference');
+        }
+        this.pageState = 'success';
+      },
+      error: (err) => {
+        this.errorMessage =
+          err?.error?.message ?? err?.message ?? 'Payment verification failed.';
+        this.pageState = 'failed';
+        if (isPlatformBrowser(this.platformId)) {
+          localStorage.removeItem('paymentReference');
+        }
+      },
+    });
+  }
 
   formatEventDate(dateString: string): string {
     if (!dateString) return '';
-    
     const date = new Date(dateString);
-    const options: Intl.DateTimeFormatOptions = {
-      month: 'short', 
+    const opts: Intl.DateTimeFormatOptions = {
+      month: 'short',
       day: 'numeric',
       year: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
+      hour12: true,
     };
-    
-    const formatted = date.toLocaleDateString('en-US', options);
-    return formatted.replace(',', ' ·');
-  }
-
-  getVenueShort(venue: string): string {
-    if (!venue) return '';
-    
-    const parts = venue.split(',');
-    if (parts.length >= 2) {
-      return `${parts[0]}, ${parts[1].trim()}`;
-    }
-    return venue;
+    return date.toLocaleDateString('en-US', opts);
   }
 
   browseMoreEvents(): void {
     this.router.navigate(['/']);
   }
 
+  tryAgain(): void {
+    this.router.navigate(['/checkout']);
+  }
+
+  retryPayment(): void {
+    this.router.navigate(['/']);
+  }
+
   printPage(): void {
-    window.print();
+    if (isPlatformBrowser(this.platformId)) {
+      window.print();
+    }
   }
 }

@@ -1,25 +1,24 @@
-
 export interface EventData {
   id: string;
   name: string;
   image_url: string;
   event_date: string;
-  description:string;
-  city:string;
-  state:string;
+  description: string;
+  city: string;
+  state: string;
   venue: string;
   ticket_types: TicketType[];
-  created_at:string;
-  updated_at:string;
-  active:boolean;
-facebook_url:string;
+  created_at: string;
+  updated_at: string;
+  active: boolean;
+  facebook_url: string;
 }
 
 export interface TicketType {
-  type: string;           // API uses 'type' instead of 'name'
+  type: string;
   price: number;
   description: string;
-  quantity: number;       // API uses 'quantity' instead of 'available'
+  quantity: number;
 }
 
 export interface BookingData {
@@ -37,9 +36,15 @@ export interface BookingData {
     state: string;
     zip: string;
   };
+  // Populated after verification
+  orderNumber?: string;
+  total?: number;
+  currency?: string;
+  paymentReference?: string;
 }
 
-// Payment API interfaces
+// ── Payment API interfaces ───────────────────────────────────────────────────
+
 export interface PaymentInitializeRequest {
   eventId: string;
   ticketTypeIndex: number;
@@ -54,6 +59,7 @@ export interface PaymentInitializeResponse {
   accessCode: string;
   reference: string;
   breakdown: {
+    ticketType: string;
     unitPrice: number;
     quantity: number;
     subtotal: number;
@@ -61,4 +67,16 @@ export interface PaymentInitializeResponse {
     total: number;
     currency: string;
   };
+}
+
+export interface VerifyPaymentRequest {
+  reference: string;
+  customerPhone?: string;
+  billingAddress?: string;
+}
+
+export interface VerifyPaymentResponse {
+  orderId: string;
+  orderNumber: string;
+  alreadyProcessed?: boolean;
 }

@@ -2,71 +2,74 @@
 <div class="nav">
   <span class="nav-logo">🎟️ EventHub</span>
   <div class="nav-links">
-    <span class="nav-link">Events</span>
+    <span class="nav-link nav-link--active">Events</span>
   </div>
 </div>
 
-<!-- Main Content -->
-<div style="padding: 28px 24px">
-  <!-- Header -->
-  <div class="text-center mb-4">
-    <div style="font-size: 22px; font-weight: 500; margin-bottom: 6px">Upcoming events</div>
-    <div style="font-size: 13px; color: var(--text-secondary)">
-      Browse and grab your tickets before they sell out
+<!-- Hero -->
+<div class="lp-hero">
+  <div class="lp-hero-badge">🎉 Live events near you</div>
+  <h1 class="lp-hero-title">Upcoming Events</h1>
+  <p class="lp-hero-sub">Browse and grab your tickets before they sell out</p>
+</div>
+
+<!-- Loading State -->
+<div *ngIf="loading" class="lp-status">
+  <div class="lp-spinner"></div>
+  <div class="lp-status-text">Fetching events…</div>
+</div>
+
+<!-- No Events State -->
+<div *ngIf="!loading && events.length === 0" class="lp-status">
+  <div style="font-size:48px;margin-bottom:12px">🎭</div>
+  <div class="lp-status-title">No events right now</div>
+  <div class="lp-status-sub">Check back soon — new events are added regularly.</div>
+</div>
+
+<!-- Events Grid -->
+<div *ngIf="!loading && events.length > 0" class="lp-grid">
+  <div *ngFor="let event of events; index as i" class="card event-card" (click)="getTickets(event)" role="button" tabindex="0" (keyup.enter)="getTickets(event)" [attr.aria-label]="'View tickets for ' + event.name">
+
+    <!-- Event Image -->
+    <div class="ecard-img" [style.background]="getEventGradient(i)">
+      <img
+        *ngIf="event.image_url"
+        [src]="event.image_url"
+        [alt]="event.name"
+        loading="lazy"
+        class="ecard-img-photo"
+        (error)="$any($event.target).style.display='none'"
+      />
+      <span class="ecard-emoji" aria-hidden="true">{{ getEventEmoji(i) }}</span>
     </div>
-  </div>
 
-  <!-- Loading State -->
-  <div *ngIf="loading" style="text-align: center; padding: 40px">
-    <i class="pi pi-spin pi-spinner" style="font-size: 2rem"></i>
-  </div>
-
-  <!-- No Events State -->
-  <div *ngIf="!loading && events.length === 0" style="text-align: center; padding: 40px">
-    <div style="font-size: 18px; margin-bottom: 8px">No Events Found</div>
-    <div style="font-size: 14px; color: var(--text-secondary)">
-      Check back later for upcoming events!
-    </div>
-  </div>
-
-  <!-- Events Grid -->
-  <div
-    *ngIf="!loading && events.length > 0"
-    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px"
-  >
-    <div *ngFor="let event of events; index as i" class="card">
-      <!-- Event Image -->
-      <div class="ecard-img" [style]="'background: ' + getEventGradient(i)">
-        <img
-          *ngIf="event.image_url"
-          [src]="event.image_url"
-          alt="event image"
-          style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px 12px 0 0"
-        />
-        <!-- Fallback emoji if no image -->
-        <span *ngIf="!event.image_url" style="font-size: 32px">🎵</span>
+    <!-- Event Content -->
+    <div class="ecard-body">
+      <div class="ecard-title">{{ event.name }}</div>
+      <div class="ecard-meta">
+        <span class="meta-item">📅 {{ formatEventDate(event.event_date) }}</span>
+        <span class="meta-item">📍 {{ event.venue }}</span>
       </div>
 
-      <!-- Event Content -->
-      <div class="ecard-body">
-        <div class="ecard-title">{{ event.name }}</div>
-        <div class="ecard-meta">
-          📅 {{ formatEventDate(event.event_date) }}<br />
-          📍 {{ event.venue }}
-        </div>
-        <div style="display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap">
-          <span *ngFor="let ticket of event.ticket_types" class="tag tag-blue">
-            {{ ticket.type }} — ${{ ticket.price.toFixed(2) }}
-          </span>
-        </div>
-        <button
-          class="btn btn-primary"
-          style="width: 100%; justify-content: center; font-size: 12px; padding: 7px"
-          (click)="getTickets(event)"
-        >
-          Get Tickets →
-        </button>
+      <!-- Ticket type tags -->
+      <div class="ecard-tags">
+        <span *ngFor="let ticket of event.ticket_types" class="tag tag-blue">
+          {{ ticket.type | titlecase }} — ${{ ticket.price.toFixed(2) }}
+        </span>
       </div>
+
+      <button
+        class="btn btn-primary ecard-btn"
+        (click)="getTickets(event); $event.stopPropagation()"
+        [attr.aria-label]="'Get tickets for ' + event.name"
+      >
+        Get Tickets →
+      </button>
     </div>
   </div>
 </div>
+
+<!-- Footer -->
+<footer class="lp-footer">
+  <span>© {{ currentYear }} EventHub · Secure payments powered by Paystack</span>
+</footer>

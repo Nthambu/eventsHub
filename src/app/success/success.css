@@ -1,0 +1,168 @@
+/* ── Shared centered status layout (verifying / failed / no-data) ── */
+.status-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 52px);
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.status-title {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.status-sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+  max-width: 340px;
+  line-height: 1.6;
+}
+
+/* Spinner */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: #1a56db;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Fail icon */
+.fail-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #fee2e2;
+  color: #dc2626;
+  font-size: 28px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+/* ── Success page layout ── */
+.success-page {
+  padding: 40px 24px;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.success-heading {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+
+.success-sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* Ticket stub */
+.ticket-divider {
+  border-top: 1.5px dashed #1a56db;
+  margin: 14px 0;
+}
+
+.ticket-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #4b6cb7;
+  margin-bottom: 6px;
+}
+
+.ticket-event-name {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.ticket-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ticket-field-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+}
+
+.ticket-field-value {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.total-paid {
+  font-weight: 600;
+  color: #1a56db !important;
+}
+
+/* What to bring box */
+.bring-box {
+  background: #fffbeb;
+  border: 0.5px solid #f59e0b;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.bring-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #92400e;
+  margin-bottom: 8px;
+}
+
+.bring-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #78350f;
+  line-height: 1.6;
+}
+
+/* Action buttons */
+.action-btn {
+  width: 100%;
+  justify-content: center;
+  padding: 12px;
+  font-size: 14px;
+}
+
+/* ── Print styles ── */
+@media print {
+  .nav, .action-btn { display: none !important; }
+  .success-page { padding: 0; max-width: 100%; }
+  .bring-box { border: 1px solid #f59e0b; }
+}
+
+/* ── Mobile ── */
+@media (max-width: 480px) {
+  .success-page { padding: 24px 16px; }
+  .ticket-grid { grid-template-columns: 1fr; gap: 8px; }
+}

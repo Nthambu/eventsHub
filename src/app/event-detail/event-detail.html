@@ -64,10 +64,10 @@
     <!-- Ticket Options -->
     <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px">
       <div
-        *ngFor="let ticket of getTicketTypes()"
+        *ngFor="let ticket of getTicketTypes(); index as ti"
         class="ticket-opt"
-        [class.selected]="selectedTicketType === ticket.type"
-        (click)="selectTicketType(ticket.type)"
+        [class.selected]="selectedTicketIndex === ti"
+        (click)="selectTicketByIndex(ti)"
       >
         <div>
           <div style="font-size: 13px; font-weight: 500">
@@ -163,7 +163,7 @@
       class="btn btn-primary"
       style="width: 100%; justify-content: center; font-size: 13px"
       (click)="proceedToCheckout()"
-      [disabled]="!selectedTicketType"
+      [disabled]="!selectedTicketDetails"
     >
       🔒 Checkout securely
     </button>
