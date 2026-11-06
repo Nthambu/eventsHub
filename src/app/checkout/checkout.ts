@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -13,20 +13,11 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
   templateUrl: './checkout.html',
   styleUrl: './checkout.css',
 })
-export class Checkout implements OnInit, OnDestroy {
+export class Checkout implements OnInit {
   checkoutData: any;
   isProcessing = false;
   paymentBreakdown: any = null;
   customerInfoForm!: FormGroup;
-
-  // Bound reference kept so we can removeEventListener on destroy
-  private readonly onPageShow = (e: PageTransitionEvent) => {
-    // persisted=true means the page was restored from bfcache
-    // persisted=false means a normal load — ngOnInit already ran, skip
-    if (e.persisted) {
-      this.isProcessing = false;
-    }
-  };
 
   constructor(
     public readonly router: Router,
@@ -40,17 +31,14 @@ export class Checkout implements OnInit, OnDestroy {
     this.initializeCustomerForm();
     this.checkoutData = this.bookingService.selectedEventData$();
 
-    // Always reset on init — covers normal navigation and hard reloads
-    this.isProcessing = false;
-
+    // If the user pressed browser-back after a Paystack redirect, there may be
+    // a stale reference in localStorage — clear it so the page is fresh.
     if (isPlatformBrowser(this.platformId)) {
-      // bfcache restore: browser back from Paystack brings the frozen page back
-      // with isProcessing still true — pageshow fires and resets it
-      window.addEventListener('pageshow', this.onPageShow);
-
-      // Also clear any stale reference left from the previous attempt
       localStorage.removeItem('paymentReference');
     }
+
+    // Ensure processing state is never inherited from a previous session
+    this.isProcessing = false;
 
     if (!this.checkoutData || !this.checkoutData.event) {
       this.toastr.warning('Please select an event first', 'No event selected');
@@ -64,19 +52,13 @@ export class Checkout implements OnInit, OnDestroy {
       total: this.checkoutData.total || 0,
     };
 
-    // Restore form values if customer already filled them before being sent to Paystack
+    // Restore form values if the user had already filled them (came back from Paystack cancel)
     if (this.checkoutData.customerInfo?.fullName) {
       this.customerInfoForm.patchValue({
         fullName: this.checkoutData.customerInfo.fullName,
         email: this.checkoutData.customerInfo.email,
         phone: this.checkoutData.customerInfo.phone,
       });
-    }
-  }
-
-  ngOnDestroy(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      window.removeEventListener('pageshow', this.onPageShow);
     }
   }
 
@@ -90,9 +72,11 @@ export class Checkout implements OnInit, OnDestroy {
   }
 
   private getTicketTypeIndex(): number {
+    // Prefer the explicit index stored by EventDetail
     if (this.checkoutData?.selectedTicketIndex !== undefined) {
       return this.checkoutData.selectedTicketIndex;
     }
+    // Fallback: find by type string
     if (!this.checkoutData?.event || !this.checkoutData.selectedTicketType) return 0;
     const idx = this.checkoutData.event.ticket_types.findIndex(
       (t: any) => t.type === this.checkoutData.selectedTicketType,
@@ -126,7 +110,7 @@ export class Checkout implements OnInit, OnDestroy {
       customerPhone: this.customerInfoForm.value.phone.trim(),
     };
 
-    // Persist customer info in context so the Success page can display it
+    // Persist email in checkout context so Success page can display it
     this.bookingService.updateCheckoutData({
       ...this.checkoutData,
       customerEmail: paymentRequest.customerEmail,
@@ -141,6 +125,7 @@ export class Checkout implements OnInit, OnDestroy {
       next: (response: PaymentInitializeResponse) => {
         this.paymentBreakdown = response.breakdown;
 
+        // Merge updated total from server breakdown into checkout context
         this.bookingService.updateCheckoutData({
           ...this.bookingService.selectedEventData$(),
           total: response.breakdown.total,
@@ -148,11 +133,16 @@ export class Checkout implements OnInit, OnDestroy {
           breakdown: response.breakdown,
         });
 
+        // Store reference for the callback URL fallback
         if (isPlatformBrowser(this.platformId)) {
           localStorage.setItem('paymentReference', response.reference);
-          // Navigate to Paystack — page unloads immediately in normal conditions.
-          // The pageshow listener above handles the bfcache restore case.
+        }
+
+        if (isPlatformBrowser(this.platformId)) {
+          // Full-page redirect to Paystack — page will unload
           window.location.href = response.authorizationUrl;
+          // Safety net: if the redirect is slow, don't leave the button spinning
+          setTimeout(() => { this.isProcessing = false; }, 8000);
         }
       },
       error: (err) => {
@@ -171,6 +161,7 @@ export class Checkout implements OnInit, OnDestroy {
     }
   }
 
+  /** Template helper */
   getTotal(): number {
     return this.paymentBreakdown?.total ?? this.checkoutData?.total ?? 0;
   }

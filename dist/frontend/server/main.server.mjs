@@ -85460,7 +85460,7 @@ var Checkout = class _Checkout {
         }));
         if (isPlatformBrowser(this.platformId)) {
           localStorage.setItem("paymentReference", response.reference);
-          window.location.href = response.authorizationUrl;
+          this.openPaystackPopup(response);
         }
       },
       error: (err) => {
@@ -85469,6 +85469,27 @@ var Checkout = class _Checkout {
         this.toastr.error(msg, "Payment error");
       }
     });
+  }
+  openPaystackPopup(response) {
+    if (typeof PaystackPop === "undefined") {
+      window.location.href = response.authorizationUrl;
+      return;
+    }
+    const handler = PaystackPop.setup({
+      key: "",
+      // not needed when using accessCode
+      accessCode: response.accessCode,
+      onSuccess: () => {
+        this.router.navigate(["/success"], {
+          queryParams: { reference: response.reference }
+        });
+      },
+      onCancel: () => {
+        this.isProcessing = false;
+        this.toastr.info("Payment cancelled. You can try again whenever you're ready.");
+      }
+    });
+    handler.openIframe();
   }
   goBack() {
     if (this.checkoutData?.event?.id) {
@@ -85688,7 +85709,7 @@ var Checkout = class _Checkout {
   }] }], null);
 })();
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(Checkout, { className: "Checkout", filePath: "src/app/checkout/checkout.ts", lineNumber: 16 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(Checkout, { className: "Checkout", filePath: "src/app/checkout/checkout.ts", lineNumber: 19 });
 })();
 
 // src/app/success/success.ts
