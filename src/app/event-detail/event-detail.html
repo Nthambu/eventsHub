@@ -78,7 +78,7 @@
           </div>
         </div>
         <div style="font-size: 14px; font-weight: 500; color: #1a56db">
-          ${{ ticket.price.toFixed(2) }}
+          KES {{ ticket.price.toFixed(2) }}
         </div>
       </div>
     </div>
@@ -130,7 +130,7 @@
         "
       >
         <span>{{ selectedTicketType | titlecase }} × {{ quantity }}</span>
-        <span>${{ getSubtotal().toFixed(2) }}</span>
+        <span>KES {{ getSubtotal().toFixed(2) }}</span>
       </div>
       <div
         *ngIf="getServiceFee() > 0"
@@ -142,7 +142,7 @@
         "
       >
         <span>Platform fee</span>
-        <span>${{ getServiceFee().toFixed(2) }}</span>
+        <span>KES {{ getServiceFee().toFixed(2) }}</span>
       </div>
       <div
         style="
@@ -154,7 +154,7 @@
         "
       >
         <span>Total</span>
-        <span style="color: #1a56db">${{ getTotal().toFixed(2) }}</span>
+        <span style="color: #1a56db">KES {{ getTotal().toFixed(2) }}</span>
       </div>
     </div>
 

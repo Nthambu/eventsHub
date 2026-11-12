@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { BehaviorSubject, Observable } from 'rxjs';
 import {
   BookingData,
@@ -18,14 +19,13 @@ import { ToastrService } from 'ngx-toastr';
 export class BookingService {
   private readonly baseUrl: string = environment.baseUrl;
 
-  // ── Signal: carries checkout context from EventDetail → Checkout
-  private selectedEventData = signal<any>({});
+  // Signal: carries checkout context from EventDetail → Checkout → Success
+  private selectedEventData = signal<any>(this.getInitialCheckoutData());
   public selectedEventData$ = this.selectedEventData.asReadonly();
 
-  // ── Events cache — survives component destruction on route changes
+  // Cache events to eliminate loading flash on return
   private eventsCache: EventData[] = [];
 
-  // ── BehaviorSubject: carries confirmed-order context into Success page
   private readonly bookingData = new BehaviorSubject<BookingData>({
     event: null,
     selectedTicketType: 'General',
@@ -38,16 +38,42 @@ export class BookingService {
   constructor(
     private http: HttpClient,
     private readonly toastr: ToastrService,
+    @Inject(PLATFORM_ID) private platformId: Object,
   ) {}
+
+  private getInitialCheckoutData(): any {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        const stored = localStorage.getItem('activeCheckoutData');
+        return stored ? JSON.parse(stored) : {};
+      } catch {
+        return {};
+      }
+    }
+    return {};
+  }
 
   // ── State mutations ─────────────────────────────────────────────────────
 
-  /** Called by EventDetail before navigating to /checkout */
   updateCheckoutData(newCheckoutData: any): void {
     this.selectedEventData.set(newCheckoutData);
+    if (isPlatformBrowser(this.platformId) && newCheckoutData) {
+      try {
+        localStorage.setItem('activeCheckoutData', JSON.stringify(newCheckoutData));
+      } catch (e) {
+        console.warn('Could not cache checkout data to localStorage', e);
+      }
+    }
   }
 
-  /** Called by Checkout after payment is verified, before navigating to /success */
+  clearCheckoutData(): void {
+    this.selectedEventData.set({});
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.removeItem('activeCheckoutData');
+      localStorage.removeItem('paymentReference');
+    }
+  }
+
   updateBookingConfirmation(data: Partial<BookingData>): void {
     const current = this.bookingData.value;
     this.bookingData.next({ ...current, ...data });
@@ -68,7 +94,6 @@ export class BookingService {
     return this.http.get<EventData[]>(`${this.baseUrl}/events`);
   }
 
-  /** Returns cached events list; null means cache is empty (caller should fetch) */
   getCachedEvents(): EventData[] | null {
     return this.eventsCache.length > 0 ? this.eventsCache : null;
   }
@@ -85,7 +110,6 @@ export class BookingService {
     return this.http.post(`${this.baseUrl}/bookings`, bookingData);
   }
 
-  /** Step 1: initialize Paystack transaction — returns authorizationUrl + reference */
   initializePayment(
     paymentRequest: PaymentInitializeRequest,
   ): Observable<PaymentInitializeResponse> {
@@ -95,7 +119,6 @@ export class BookingService {
     );
   }
 
-  /** Step 2: called after Paystack redirects back — verifies and saves the order server-side */
   verifyPayment(req: VerifyPaymentRequest): Observable<VerifyPaymentResponse> {
     return this.http.post<VerifyPaymentResponse>(`${this.baseUrl}/checkout/verify`, req);
   }
@@ -103,8 +126,10 @@ export class BookingService {
   // ── Helpers ─────────────────────────────────────────────────────────────
 
   formatEventDate(dateString: string): string {
+    if (!dateString) return '';
     const date = new Date(dateString);
     const options: Intl.DateTimeFormatOptions = {
+      weekday: 'short',
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -112,14 +137,13 @@ export class BookingService {
       minute: '2-digit',
       hour12: true,
     };
-    const formatted = date.toLocaleDateString('en-US', options);
-    return formatted.replace(',', ' ·');
+    return date.toLocaleDateString('en-US', options).replace(',', ' ·');
   }
 
   handleApiError(err: any): void {
     this.toastr.error(
       err?.error?.message || err?.error?.status || 'Server error — please try again.',
-      'Oops!',
+      'Notice',
     );
   }
 }

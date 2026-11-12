@@ -1,7 +1,6 @@
-import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser, CommonModule } from '@angular/common';
+import { Router, ActivatedRoute } from '@angular/router';
 import { BookingService } from '../services/booking.service';
 import { PaymentInitializeRequest, PaymentInitializeResponse } from '../data/events-dto';
 import { ToastrService } from 'ngx-toastr';
@@ -9,18 +8,21 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 
 @Component({
   selector: 'app-checkout',
+  standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './checkout.html',
   styleUrl: './checkout.css',
 })
-export class Checkout implements OnInit {
+export class Checkout implements OnInit, OnDestroy {
   checkoutData: any;
   isProcessing = false;
   paymentBreakdown: any = null;
   customerInfoForm!: FormGroup;
+  private pageshowHandler?: (event: PageTransitionEvent) => void;
 
   constructor(
     public readonly router: Router,
+    private readonly route: ActivatedRoute,
     private readonly bookingService: BookingService,
     private readonly toastr: ToastrService,
     private fb: FormBuilder,
@@ -29,16 +31,42 @@ export class Checkout implements OnInit {
 
   ngOnInit(): void {
     this.initializeCustomerForm();
-    this.checkoutData = this.bookingService.selectedEventData$();
 
-    // If the user pressed browser-back after a Paystack redirect, there may be
-    // a stale reference in localStorage — clear it so the page is fresh.
-    if (isPlatformBrowser(this.platformId)) {
-      localStorage.removeItem('paymentReference');
-    }
-
-    // Ensure processing state is never inherited from a previous session
+    // Reset processing state on load
     this.isProcessing = false;
+
+    // Load active event data (fallback to localStorage if full redirect reloaded the app)
+    this.checkoutData = this.bookingService.selectedEventData$?.() ?? null;
+
+    if (isPlatformBrowser(this.platformId)) {
+      if (!this.checkoutData || !this.checkoutData.event) {
+        const stored = localStorage.getItem('activeCheckoutData');
+        if (stored) {
+          try {
+            this.checkoutData = JSON.parse(stored);
+            this.bookingService.updateCheckoutData(this.checkoutData);
+          } catch {
+            this.checkoutData = null;
+          }
+        }
+      }
+
+      // Handle user returning via browser back-forward cache
+      this.pageshowHandler = (event: PageTransitionEvent) => {
+        this.isProcessing = false;
+      };
+      window.addEventListener('pageshow', this.pageshowHandler);
+
+      // Handle explicit Paystack cancellation redirect (?cancelled=true)
+      const isCancelled = this.route.snapshot.queryParamMap.get('cancelled') === 'true';
+      if (isCancelled) {
+        this.isProcessing = false;
+        localStorage.removeItem('paymentReference');
+        this.toastr.info('Payment was cancelled. You can review your details and try again.');
+        // Clean query params from the URL cleanly
+        this.router.navigate([], { queryParams: {}, replaceUrl: true });
+      }
+    }
 
     if (!this.checkoutData || !this.checkoutData.event) {
       this.toastr.warning('Please select an event first', 'No event selected');
@@ -52,13 +80,18 @@ export class Checkout implements OnInit {
       total: this.checkoutData.total || 0,
     };
 
-    // Restore form values if the user had already filled them (came back from Paystack cancel)
     if (this.checkoutData.customerInfo?.fullName) {
       this.customerInfoForm.patchValue({
         fullName: this.checkoutData.customerInfo.fullName,
         email: this.checkoutData.customerInfo.email,
         phone: this.checkoutData.customerInfo.phone,
       });
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (isPlatformBrowser(this.platformId) && this.pageshowHandler) {
+      window.removeEventListener('pageshow', this.pageshowHandler);
     }
   }
 
@@ -72,11 +105,9 @@ export class Checkout implements OnInit {
   }
 
   private getTicketTypeIndex(): number {
-    // Prefer the explicit index stored by EventDetail
     if (this.checkoutData?.selectedTicketIndex !== undefined) {
       return this.checkoutData.selectedTicketIndex;
     }
-    // Fallback: find by type string
     if (!this.checkoutData?.event || !this.checkoutData.selectedTicketType) return 0;
     const idx = this.checkoutData.event.ticket_types.findIndex(
       (t: any) => t.type === this.checkoutData.selectedTicketType,
@@ -110,8 +141,7 @@ export class Checkout implements OnInit {
       customerPhone: this.customerInfoForm.value.phone.trim(),
     };
 
-    // Persist email in checkout context so Success page can display it
-    this.bookingService.updateCheckoutData({
+    const updatedData = {
       ...this.checkoutData,
       customerEmail: paymentRequest.customerEmail,
       customerInfo: {
@@ -119,29 +149,27 @@ export class Checkout implements OnInit {
         email: paymentRequest.customerEmail,
         phone: paymentRequest.customerPhone,
       },
-    });
+    };
+
+    this.bookingService.updateCheckoutData(updatedData);
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem('activeCheckoutData', JSON.stringify(updatedData));
+    }
 
     this.bookingService.initializePayment(paymentRequest).subscribe({
       next: (response: PaymentInitializeResponse) => {
         this.paymentBreakdown = response.breakdown;
 
-        // Merge updated total from server breakdown into checkout context
         this.bookingService.updateCheckoutData({
-          ...this.bookingService.selectedEventData$(),
+          ...updatedData,
           total: response.breakdown.total,
           currency: response.breakdown.currency,
           breakdown: response.breakdown,
         });
 
-        // Store reference for the callback URL fallback
         if (isPlatformBrowser(this.platformId)) {
           localStorage.setItem('paymentReference', response.reference);
-        }
-
-        if (isPlatformBrowser(this.platformId)) {
-          // Full-page redirect to Paystack — page will unload
           window.location.href = response.authorizationUrl;
-          // Safety net: if the redirect is slow, don't leave the button spinning
           setTimeout(() => { this.isProcessing = false; }, 8000);
         }
       },
@@ -161,12 +189,11 @@ export class Checkout implements OnInit {
     }
   }
 
-  /** Template helper */
   getTotal(): number {
     return this.paymentBreakdown?.total ?? this.checkoutData?.total ?? 0;
   }
 
   getCurrency(): string {
-    return this.paymentBreakdown?.currency ?? this.checkoutData?.breakdown?.currency ?? 'USD';
+    return this.paymentBreakdown?.currency ?? this.checkoutData?.breakdown?.currency ?? 'KES';
   }
 }

@@ -1,14 +1,15 @@
 import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { CommonModule } from '@angular/common';
+import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BookingService } from '../services/booking.service';
 import { Subscription } from 'rxjs';
+import { ToastrService } from 'ngx-toastr';
 
 type PageState = 'verifying' | 'success' | 'failed' | 'no-data';
 
 @Component({
   selector: 'app-success',
+  standalone: true,
   imports: [CommonModule],
   templateUrl: './success.html',
   styleUrl: './success.css',
@@ -19,8 +20,9 @@ export class Success implements OnInit, OnDestroy {
 
   orderNumber = '';
   total = 0;
-  currency = 'USD';
+  currency = 'KES';
   booking: any = null;
+  paymentReference = '';
 
   private sub?: Subscription;
 
@@ -28,21 +30,41 @@ export class Success implements OnInit, OnDestroy {
     private router: Router,
     private route: ActivatedRoute,
     private bookingService: BookingService,
+    private readonly toastr: ToastrService,
     @Inject(PLATFORM_ID) private platformId: Object,
   ) {}
 
   ngOnInit(): void {
-    // Query params are available on both server and browser
     const ref =
+      this.route.snapshot.queryParamMap.get('ref') ||
       this.route.snapshot.queryParamMap.get('reference') ||
       this.route.snapshot.queryParamMap.get('trxref') ||
-      // localStorage is browser-only
       (isPlatformBrowser(this.platformId) ? localStorage.getItem('paymentReference') : null);
 
     if (!ref) {
       this.pageState = 'no-data';
       return;
     }
+
+    this.paymentReference = ref;
+
+    // Retrieve active booking data
+    let ctx = this.bookingService.selectedEventData$();
+    if ((!ctx || !ctx.event) && isPlatformBrowser(this.platformId)) {
+      try {
+        const stored = localStorage.getItem('activeCheckoutData');
+        if (stored) {
+          ctx = JSON.parse(stored);
+          this.bookingService.updateCheckoutData(ctx);
+        }
+      } catch (e) {
+        ctx = null;
+      }
+    }
+
+    this.booking = ctx && ctx.event ? ctx : null;
+    this.total = ctx?.total ?? 0;
+    this.currency = ctx?.breakdown?.currency ?? ctx?.currency ?? 'KES';
 
     this.verifyPayment(ref);
   }
@@ -54,23 +76,25 @@ export class Success implements OnInit, OnDestroy {
   private verifyPayment(reference: string): void {
     this.pageState = 'verifying';
 
-    this.sub = this.bookingService.verifyPayment({ reference }).subscribe({
-      next: (res) => {
-        this.orderNumber = res.orderNumber;
+    // Pass optional customerPhone so the backend can use it if Paystack metadata is missing
+    const phone = this.booking?.customerInfo?.phone ?? this.booking?.customerPhone ?? undefined;
 
-        const ctx = this.bookingService.selectedEventData$();
-        this.booking = ctx && ctx.event ? ctx : null;
-        this.total = ctx?.total ?? 0;
-        this.currency = ctx?.breakdown?.currency ?? ctx?.currency ?? 'USD';
+    this.sub = this.bookingService.verifyPayment({ reference, customerPhone: phone }).subscribe({
+      next: (res: any) => {
+        this.orderNumber = res?.orderNumber || res?.order_number || reference;
 
-        if (ctx?.event) {
+        if (this.booking?.event) {
           this.bookingService.updateBookingConfirmation({
-            event: ctx.event,
-            selectedTicketType: ctx.selectedTicketType,
-            quantity: ctx.quantity,
-            customerInfo: ctx.customerInfo ?? { fullName: '', email: ctx.customerEmail ?? '', phone: '' },
-            orderNumber: res.orderNumber,
-            total: ctx.total,
+            event: this.booking.event,
+            selectedTicketType: this.booking.selectedTicketType,
+            quantity: this.booking.quantity,
+            customerInfo: this.booking.customerInfo ?? {
+              fullName: '',
+              email: this.booking.customerEmail ?? '',
+              phone: '',
+            },
+            orderNumber: this.orderNumber,
+            total: this.total,
             currency: this.currency,
             paymentReference: reference,
           });
@@ -78,12 +102,15 @@ export class Success implements OnInit, OnDestroy {
 
         if (isPlatformBrowser(this.platformId)) {
           localStorage.removeItem('paymentReference');
+          localStorage.removeItem('activeCheckoutData'); // clean up after confirmed order
         }
         this.pageState = 'success';
+        this.toastr.success('Your official e-ticket voucher has been emailed')
+        this.router.navigate(['/']);
       },
       error: (err) => {
         this.errorMessage =
-          err?.error?.message ?? err?.message ?? 'Payment verification failed.';
+          err?.error?.message ?? err?.message ?? 'Payment verification failed. Please contact support.';
         this.pageState = 'failed';
         if (isPlatformBrowser(this.platformId)) {
           localStorage.removeItem('paymentReference');
@@ -92,10 +119,28 @@ export class Success implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Dynamically checks if the current booking is a sports/stadium match
+   */
+  isSportsEvent(): boolean {
+    if (!this.booking?.event) return false;
+    const text = `${this.booking.event.name} ${this.booking.event.venue || ''}`.toLowerCase();
+    return text.includes('vs') || text.includes('stadium') || text.includes('bayern') || text.includes('ajax') || text.includes('cup');
+  }
+
+  getEventVenue(): string {
+    return this.booking?.event?.venue || 'Venue to be confirmed';
+  }
+
+  getEventName(): string {
+    return this.booking?.event?.name || 'Confirmed Event Booking';
+  }
+
   formatEventDate(dateString: string): string {
-    if (!dateString) return '';
+    if (!dateString) return 'Date specified on e-ticket';
     const date = new Date(dateString);
     const opts: Intl.DateTimeFormatOptions = {
+      weekday: 'short',
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -107,15 +152,12 @@ export class Success implements OnInit, OnDestroy {
   }
 
   browseMoreEvents(): void {
+    this.bookingService.clearCheckoutData();
     this.router.navigate(['/']);
   }
 
   tryAgain(): void {
     this.router.navigate(['/checkout']);
-  }
-
-  retryPayment(): void {
-    this.router.navigate(['/']);
   }
 
   printPage(): void {

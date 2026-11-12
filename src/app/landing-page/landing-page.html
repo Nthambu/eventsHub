@@ -1,37 +1,79 @@
 <!-- Navigation -->
-<div class="nav">
-  <span class="nav-logo">🎟️ EventHub</span>
-  <div class="nav-links">
-    <span class="nav-link nav-link--active">Events</span>
+<header class="nav">
+  <div class="nav-brand">
+    <span class="nav-logo">🎟️ EventHub</span>
+    <span class="nav-badge-fifa">
+      <svg class="fifa-svg" viewBox="0 0 100 24" fill="currentColor">
+        <text x="2" y="18" font-family="Arial Black, Impact, sans-serif" font-size="20" font-weight="900" letter-spacing="1.5">FIFA</text>
+      </svg>
+      <span>SANCTIONED FIXTURE</span>
+    </span>
   </div>
-</div>
+  <div class="nav-links">
+  <span *ngIf="events.length > 0 " class="text-danger font-bold " style="margin-right:-1.4rem;font-size:20px;box-shadow: 1 4px 9px 0 rgba(1, 3, 4, 0.15);">{{events.length}}</span>  <span class="nav-link nav-link--active">Upcoming Matches & Events</span>
+  </div>
+</header>
 
 <!-- Hero -->
-<div class="lp-hero">
-  <div class="lp-hero-badge">🎉 Live events near you</div>
-  <h1 class="lp-hero-title">Upcoming Events</h1>
-  <p class="lp-hero-sub">Browse and grab your tickets before they sell out</p>
-</div>
+<section class="lp-hero">
+  <!-- Scrolling image strip — shows event images, falls back to gradient tiles -->
+  <div class="hero-strip-wrapper" *ngIf="events.length > 0">
+    <div class="hero-strip">
+      <!-- Doubled list so the loop is seamless -->
+      <ng-container *ngFor="let pass of [0,1]">
+        <div
+          *ngFor="let event of events; index as i"
+          class="strip-tile"
+          [style.background]="getEventGradient(i)"
+        >
+          <img
+            *ngIf="event.image_url"
+            [src]="event.image_url"
+            [alt]="event.name"
+            class="strip-tile-img"
+            loading="lazy"
+            (error)="$any($event.target).style.display='none'"
+          />
+          <span class="strip-tile-emoji" aria-hidden="true">{{ getEventEmoji(i) }}</span>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+
+  <h1 class="lp-hero-title">Official Match Tickets & Events</h1>
+  <p class="lp-hero-sub">Select your ticket category and secure verified seats instantly via Paystack</p>
+</section>
 
 <!-- Loading State -->
 <div *ngIf="loading" class="lp-status">
   <div class="lp-spinner"></div>
-  <div class="lp-status-text">Fetching events…</div>
+  <div class="lp-status-text">Fetching official events…</div>
 </div>
 
-<!-- No Events State -->
-<div *ngIf="!loading && events.length === 0" class="lp-status">
-  <div style="font-size:48px;margin-bottom:12px">🎭</div>
-  <div class="lp-status-title">No events right now</div>
-  <div class="lp-status-sub">Check back soon — new events are added regularly.</div>
+<!-- Empty State -->
+<div *ngIf="!loading && events.length === 0" class="d-flex justify-content-center">
+  <div class="d-block">
+  <div style="font-size:48px;margin-bottom:12px">🏟️</div>
+  <div class="lp-status-title">No events available</div>
+  <div class="lp-status-sub">Please check back soon for upcoming fixtures.</div></div>
 </div>
 
 <!-- Events Grid -->
-<div *ngIf="!loading && events.length > 0" class="lp-grid">
-  <div *ngFor="let event of events; index as i" class="card event-card" (click)="getTickets(event)" role="button" tabindex="0" (keyup.enter)="getTickets(event)" [attr.aria-label]="'View tickets for ' + event.name">
-
-    <!-- Event Image -->
+<main *ngIf="!loading && events.length > 0" class="lp-grid">
+  <article 
+    *ngFor="let event of events; index as i" 
+    class="card event-card" 
+    (click)="getTickets(event)" 
+    role="button" 
+    tabindex="0" 
+    (keyup.enter)="getTickets(event)"
+    [attr.aria-label]="'View tickets for ' + event.name"
+  >
+    <!-- Card Media -->
     <div class="ecard-img" [style.background]="getEventGradient(i)">
+      <div *ngIf="isMatchEvent(event)" class="fifa-event-pill">
+        ⚽ FIFA Matchday Friendly
+      </div>
       <img
         *ngIf="event.image_url"
         [src]="event.image_url"
@@ -43,33 +85,41 @@
       <span class="ecard-emoji" aria-hidden="true">{{ getEventEmoji(i) }}</span>
     </div>
 
-    <!-- Event Content -->
+    <!-- Centered Card Body with equal height distribution -->
     <div class="ecard-body">
-      <div class="ecard-title">{{ event.name }}</div>
-      <div class="ecard-meta">
-        <span class="meta-item">📅 {{ formatEventDate(event.event_date) }}</span>
-        <span class="meta-item">📍 {{ event.venue }}</span>
+      <div class="ecard-header-group">
+        <h2 class="ecard-title" [title]="event.name">{{ event.name }}</h2>
+        <div class="ecard-meta">
+          <div class="meta-item">📅 {{ formatEventDate(event.event_date) }}</div>
+          <div class="meta-item">📍 {{ event.venue }}</div>
+        </div>
       </div>
 
-      <!-- Ticket type tags -->
-      <div class="ecard-tags">
-        <span *ngFor="let ticket of event.ticket_types" class="tag tag-blue">
-          {{ ticket.type | titlecase }} — ${{ ticket.price.toFixed(2) }}
-        </span>
+      <!-- Ticket price range -->
+      <div class="ecard-tags-wrapper">
+        <div class="ecard-tags">
+          <div class="text-danger fw-bold tag tag-blue">
+            <span class="text-dark fw-normal" style="font-size:13px;padding-right:5px">Starting</span> KES {{ event.ticket_types[0].price.toFixed(2) }}<ng-container *ngIf="event.ticket_types.length > 1">  →  KES {{ event.ticket_types[event.ticket_types.length - 1].price.toFixed(2) }}</ng-container>
+          </div>
+        </div>
       </div>
 
-      <button
-        class="btn btn-primary ecard-btn"
-        (click)="getTickets(event); $event.stopPropagation()"
-        [attr.aria-label]="'Get tickets for ' + event.name"
-      >
-        Get Tickets →
-      </button>
+      <!-- Action Button -->
+      <div class="ecard-action">
+        <button
+          class="btn btn-primary ecard-btn"
+          (click)="getTickets(event); $event.stopPropagation()"
+          [attr.aria-label]="'Get tickets for ' + event.name"
+        >
+          Get Tickets → 
+        </button>
+      </div>
     </div>
-  </div>
-</div>
+  </article>
+</main>
 
 <!-- Footer -->
 <footer class="lp-footer">
-  <span>© {{ currentYear }} EventHub · Secure payments powered by Paystack</span>
+  <div>© {{ currentYear }} EventHub Ticketing · Talanta Stadium International Showcase</div>
+  <div class="lp-footer-sub">🛡️ PCI DSS Level 1 Certified Payments via Paystack</div>
 </footer>

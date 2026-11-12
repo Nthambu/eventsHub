@@ -46993,8 +46993,8 @@ var NoopAnimationsModule = class _NoopAnimationsModule {
 // src/environments/environment.ts
 var environment = {
   production: false,
-  //baseUrl: 'http://localhost:3000'
-  baseUrl: "https://madfuns-backend.onrender.com"
+  baseUrl: "http://localhost:3000"
+  //baseUrl: 'https://madfuns-backend.onrender.com'
 };
 
 // node_modules/@angular/animations/fesm2022/animations.mjs
@@ -48613,13 +48613,13 @@ var ToastNoAnimationModule = class _ToastNoAnimationModule {
 var BookingService = class _BookingService {
   http;
   toastr;
+  platformId;
   baseUrl = environment.baseUrl;
-  // ── Signal: carries checkout context from EventDetail → Checkout
-  selectedEventData = signal({}, ...ngDevMode ? [{ debugName: "selectedEventData" }] : []);
+  // Signal: carries checkout context from EventDetail → Checkout → Success
+  selectedEventData = signal(this.getInitialCheckoutData(), ...ngDevMode ? [{ debugName: "selectedEventData" }] : []);
   selectedEventData$ = this.selectedEventData.asReadonly();
-  // ── Events cache — survives component destruction on route changes
+  // Cache events to eliminate loading flash on return
   eventsCache = [];
-  // ── BehaviorSubject: carries confirmed-order context into Success page
   bookingData = new BehaviorSubject({
     event: null,
     selectedTicketType: "General",
@@ -48628,16 +48628,40 @@ var BookingService = class _BookingService {
     billingAddress: { street: "", city: "", state: "", zip: "" }
   });
   booking$ = this.bookingData.asObservable();
-  constructor(http, toastr) {
+  constructor(http, toastr, platformId) {
     this.http = http;
     this.toastr = toastr;
+    this.platformId = platformId;
+  }
+  getInitialCheckoutData() {
+    if (typeof window !== "undefined" && window.localStorage) {
+      try {
+        const stored = localStorage.getItem("activeCheckoutData");
+        return stored ? JSON.parse(stored) : {};
+      } catch {
+        return {};
+      }
+    }
+    return {};
   }
   // ── State mutations ─────────────────────────────────────────────────────
-  /** Called by EventDetail before navigating to /checkout */
   updateCheckoutData(newCheckoutData) {
     this.selectedEventData.set(newCheckoutData);
+    if (isPlatformBrowser(this.platformId) && newCheckoutData) {
+      try {
+        localStorage.setItem("activeCheckoutData", JSON.stringify(newCheckoutData));
+      } catch (e) {
+        console.warn("Could not cache checkout data to localStorage", e);
+      }
+    }
   }
-  /** Called by Checkout after payment is verified, before navigating to /success */
+  clearCheckoutData() {
+    this.selectedEventData.set({});
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.removeItem("activeCheckoutData");
+      localStorage.removeItem("paymentReference");
+    }
+  }
   updateBookingConfirmation(data) {
     const current = this.bookingData.value;
     this.bookingData.next(__spreadValues(__spreadValues({}, current), data));
@@ -48653,7 +48677,6 @@ var BookingService = class _BookingService {
   getEvents() {
     return this.http.get(`${this.baseUrl}/events`);
   }
-  /** Returns cached events list; null means cache is empty (caller should fetch) */
   getCachedEvents() {
     return this.eventsCache.length > 0 ? this.eventsCache : null;
   }
@@ -48666,18 +48689,19 @@ var BookingService = class _BookingService {
   submitBooking(bookingData) {
     return this.http.post(`${this.baseUrl}/bookings`, bookingData);
   }
-  /** Step 1: initialize Paystack transaction — returns authorizationUrl + reference */
   initializePayment(paymentRequest) {
     return this.http.post(`${this.baseUrl}/checkout/initialize`, paymentRequest);
   }
-  /** Step 2: called after Paystack redirects back — verifies and saves the order server-side */
   verifyPayment(req) {
     return this.http.post(`${this.baseUrl}/checkout/verify`, req);
   }
   // ── Helpers ─────────────────────────────────────────────────────────────
   formatEventDate(dateString) {
+    if (!dateString)
+      return "";
     const date = new Date(dateString);
     const options = {
+      weekday: "short",
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -48685,14 +48709,13 @@ var BookingService = class _BookingService {
       minute: "2-digit",
       hour12: true
     };
-    const formatted = date.toLocaleDateString("en-US", options);
-    return formatted.replace(",", " \xB7");
+    return date.toLocaleDateString("en-US", options).replace(",", " \xB7");
   }
   handleApiError(err) {
-    this.toastr.error(err?.error?.message || err?.error?.status || "Server error \u2014 please try again.", "Oops!");
+    this.toastr.error(err?.error?.message || err?.error?.status || "Server error \u2014 please try again.", "Notice");
   }
   static \u0275fac = function BookingService_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _BookingService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(ToastrService));
+    return new (__ngFactoryType__ || _BookingService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(ToastrService), \u0275\u0275inject(PLATFORM_ID));
   };
   static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _BookingService, factory: _BookingService.\u0275fac, providedIn: "root" });
 };
@@ -48702,133 +48725,221 @@ var BookingService = class _BookingService {
     args: [{
       providedIn: "root"
     }]
-  }], () => [{ type: HttpClient }, { type: ToastrService }], null);
+  }], () => [{ type: HttpClient }, { type: ToastrService }, { type: Object, decorators: [{
+    type: Inject,
+    args: [PLATFORM_ID]
+  }] }], null);
 })();
 
 // src/app/landing-page/landing-page.ts
-function LandingPage_div_13_Template(rf, ctx) {
+var _c02 = () => [0, 1];
+function LandingPage_span_11_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 11);
-    \u0275\u0275element(1, "div", 12);
-    \u0275\u0275elementStart(2, "div", 13);
-    \u0275\u0275text(3, "Fetching events\u2026");
-    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(0, "span", 18);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(ctx_r0.events.length);
   }
 }
-function LandingPage_div_14_Template(rf, ctx) {
+function LandingPage_div_15_ng_container_2_div_1_img_1_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 11)(1, "div", 14);
-    \u0275\u0275text(2, "\u{1F3AD}");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 15);
-    \u0275\u0275text(4, "No events right now");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(5, "div", 16);
-    \u0275\u0275text(6, "Check back soon \u2014 new events are added regularly.");
-    \u0275\u0275elementEnd()();
-  }
-}
-function LandingPage_div_15_div_1_img_2_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r4 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "img", 30);
-    \u0275\u0275listener("error", function LandingPage_div_15_div_1_img_2_Template_img_error_0_listener($event) {
-      \u0275\u0275restoreView(_r4);
+    const _r2 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "img", 26);
+    \u0275\u0275listener("error", function LandingPage_div_15_ng_container_2_div_1_img_1_Template_img_error_0_listener($event) {
+      \u0275\u0275restoreView(_r2);
       return \u0275\u0275resetView($event.target.style.display = "none");
     });
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const event_r2 = \u0275\u0275nextContext().$implicit;
-    \u0275\u0275property("src", event_r2.image_url, \u0275\u0275sanitizeUrl)("alt", event_r2.name);
+    const event_r3 = \u0275\u0275nextContext().$implicit;
+    \u0275\u0275property("src", event_r3.image_url, \u0275\u0275sanitizeUrl)("alt", event_r3.name);
   }
 }
-function LandingPage_div_15_div_1_span_14_Template(rf, ctx) {
+function LandingPage_div_15_ng_container_2_div_1_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "span", 31);
-    \u0275\u0275text(1);
-    \u0275\u0275pipe(2, "titlecase");
-    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(0, "div", 23);
+    \u0275\u0275template(1, LandingPage_div_15_ng_container_2_div_1_img_1_Template, 1, 2, "img", 24);
+    \u0275\u0275elementStart(2, "span", 25);
+    \u0275\u0275text(3);
+    \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
-    const ticket_r5 = ctx.$implicit;
+    const event_r3 = ctx.$implicit;
+    const i_r4 = ctx.index;
+    const ctx_r0 = \u0275\u0275nextContext(3);
+    \u0275\u0275styleProp("background", ctx_r0.getEventGradient(i_r4));
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate2(" ", \u0275\u0275pipeBind1(2, 2, ticket_r5.type), " \u2014 $", ticket_r5.price.toFixed(2), " ");
+    \u0275\u0275property("ngIf", event_r3.image_url);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(ctx_r0.getEventEmoji(i_r4));
   }
 }
-function LandingPage_div_15_div_1_Template(rf, ctx) {
+function LandingPage_div_15_ng_container_2_Template(rf, ctx) {
   if (rf & 1) {
-    const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 19);
-    \u0275\u0275listener("click", function LandingPage_div_15_div_1_Template_div_click_0_listener() {
-      const event_r2 = \u0275\u0275restoreView(_r1).$implicit;
-      const ctx_r2 = \u0275\u0275nextContext(2);
-      return \u0275\u0275resetView(ctx_r2.getTickets(event_r2));
-    })("keyup.enter", function LandingPage_div_15_div_1_Template_div_keyup_enter_0_listener() {
-      const event_r2 = \u0275\u0275restoreView(_r1).$implicit;
-      const ctx_r2 = \u0275\u0275nextContext(2);
-      return \u0275\u0275resetView(ctx_r2.getTickets(event_r2));
-    });
-    \u0275\u0275elementStart(1, "div", 20);
-    \u0275\u0275template(2, LandingPage_div_15_div_1_img_2_Template, 1, 2, "img", 21);
-    \u0275\u0275elementStart(3, "span", 22);
-    \u0275\u0275text(4);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(5, "div", 23)(6, "div", 24);
-    \u0275\u0275text(7);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(8, "div", 25)(9, "span", 26);
-    \u0275\u0275text(10);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(11, "span", 26);
-    \u0275\u0275text(12);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(13, "div", 27);
-    \u0275\u0275template(14, LandingPage_div_15_div_1_span_14_Template, 3, 4, "span", 28);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(15, "button", 29);
-    \u0275\u0275listener("click", function LandingPage_div_15_div_1_Template_button_click_15_listener($event) {
-      const event_r2 = \u0275\u0275restoreView(_r1).$implicit;
-      const ctx_r2 = \u0275\u0275nextContext(2);
-      ctx_r2.getTickets(event_r2);
-      return \u0275\u0275resetView($event.stopPropagation());
-    });
-    \u0275\u0275text(16, " Get Tickets \u2192 ");
-    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275template(1, LandingPage_div_15_ng_container_2_div_1_Template, 4, 4, "div", 22);
+    \u0275\u0275elementContainerEnd();
   }
   if (rf & 2) {
-    const event_r2 = ctx.$implicit;
-    const i_r6 = ctx.index;
-    const ctx_r2 = \u0275\u0275nextContext(2);
-    \u0275\u0275attribute("aria-label", "View tickets for " + event_r2.name);
+    const ctx_r0 = \u0275\u0275nextContext(2);
     \u0275\u0275advance();
-    \u0275\u0275styleProp("background", ctx_r2.getEventGradient(i_r6));
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", event_r2.image_url);
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(ctx_r2.getEventEmoji(i_r6));
-    \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate(event_r2.name);
-    \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate1("\u{1F4C5} ", ctx_r2.formatEventDate(event_r2.event_date));
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate1("\u{1F4CD} ", event_r2.venue);
-    \u0275\u0275advance(2);
-    \u0275\u0275property("ngForOf", event_r2.ticket_types);
-    \u0275\u0275advance();
-    \u0275\u0275attribute("aria-label", "Get tickets for " + event_r2.name);
+    \u0275\u0275property("ngForOf", ctx_r0.events);
   }
 }
 function LandingPage_div_15_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 17);
-    \u0275\u0275template(1, LandingPage_div_15_div_1_Template, 17, 10, "div", 18);
+    \u0275\u0275elementStart(0, "div", 19)(1, "div", 20);
+    \u0275\u0275template(2, LandingPage_div_15_ng_container_2_Template, 2, 1, "ng-container", 21);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngForOf", \u0275\u0275pureFunction0(1, _c02));
+  }
+}
+function LandingPage_div_20_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 27);
+    \u0275\u0275element(1, "div", 28);
+    \u0275\u0275elementStart(2, "div", 29);
+    \u0275\u0275text(3, "Fetching official events\u2026");
+    \u0275\u0275elementEnd()();
+  }
+}
+function LandingPage_div_21_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 30)(1, "div", 31)(2, "div", 32);
+    \u0275\u0275text(3, "\u{1F3DF}\uFE0F");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(4, "div", 33);
+    \u0275\u0275text(5, "No events available");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(6, "div", 34);
+    \u0275\u0275text(7, "Please check back soon for upcoming fixtures.");
+    \u0275\u0275elementEnd()()();
+  }
+}
+function LandingPage_main_22_article_1_div_2_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 54);
+    \u0275\u0275text(1, " \u26BD FIFA Matchday Friendly ");
+    \u0275\u0275elementEnd();
+  }
+}
+function LandingPage_main_22_article_1_img_3_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r7 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "img", 55);
+    \u0275\u0275listener("error", function LandingPage_main_22_article_1_img_3_Template_img_error_0_listener($event) {
+      \u0275\u0275restoreView(_r7);
+      return \u0275\u0275resetView($event.target.style.display = "none");
+    });
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const ctx_r2 = \u0275\u0275nextContext();
+    const event_r6 = \u0275\u0275nextContext().$implicit;
+    \u0275\u0275property("src", event_r6.image_url, \u0275\u0275sanitizeUrl)("alt", event_r6.name);
+  }
+}
+function LandingPage_main_22_article_1_ng_container_21_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275text(1);
+    \u0275\u0275elementContainerEnd();
+  }
+  if (rf & 2) {
+    const event_r6 = \u0275\u0275nextContext().$implicit;
     \u0275\u0275advance();
-    \u0275\u0275property("ngForOf", ctx_r2.events);
+    \u0275\u0275textInterpolate1(" \u2192 KES ", event_r6.ticket_types[event_r6.ticket_types.length - 1].price.toFixed(2));
+  }
+}
+function LandingPage_main_22_article_1_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r5 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "article", 37);
+    \u0275\u0275listener("click", function LandingPage_main_22_article_1_Template_article_click_0_listener() {
+      const event_r6 = \u0275\u0275restoreView(_r5).$implicit;
+      const ctx_r0 = \u0275\u0275nextContext(2);
+      return \u0275\u0275resetView(ctx_r0.getTickets(event_r6));
+    })("keyup.enter", function LandingPage_main_22_article_1_Template_article_keyup_enter_0_listener() {
+      const event_r6 = \u0275\u0275restoreView(_r5).$implicit;
+      const ctx_r0 = \u0275\u0275nextContext(2);
+      return \u0275\u0275resetView(ctx_r0.getTickets(event_r6));
+    });
+    \u0275\u0275elementStart(1, "div", 38);
+    \u0275\u0275template(2, LandingPage_main_22_article_1_div_2_Template, 2, 0, "div", 39)(3, LandingPage_main_22_article_1_img_3_Template, 1, 2, "img", 40);
+    \u0275\u0275elementStart(4, "span", 41);
+    \u0275\u0275text(5);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(6, "div", 42)(7, "div", 43)(8, "h2", 44);
+    \u0275\u0275text(9);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(10, "div", 45)(11, "div", 46);
+    \u0275\u0275text(12);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(13, "div", 46);
+    \u0275\u0275text(14);
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(15, "div", 47)(16, "div", 48)(17, "div", 49)(18, "span", 50);
+    \u0275\u0275text(19, "Starting");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(20);
+    \u0275\u0275template(21, LandingPage_main_22_article_1_ng_container_21_Template, 2, 1, "ng-container", 51);
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(22, "div", 52)(23, "button", 53);
+    \u0275\u0275listener("click", function LandingPage_main_22_article_1_Template_button_click_23_listener($event) {
+      const event_r6 = \u0275\u0275restoreView(_r5).$implicit;
+      const ctx_r0 = \u0275\u0275nextContext(2);
+      ctx_r0.getTickets(event_r6);
+      return \u0275\u0275resetView($event.stopPropagation());
+    });
+    \u0275\u0275text(24, " Get Tickets \u2192 ");
+    \u0275\u0275elementEnd()()()();
+  }
+  if (rf & 2) {
+    const event_r6 = ctx.$implicit;
+    const i_r8 = ctx.index;
+    const ctx_r0 = \u0275\u0275nextContext(2);
+    \u0275\u0275attribute("aria-label", "View tickets for " + event_r6.name);
+    \u0275\u0275advance();
+    \u0275\u0275styleProp("background", ctx_r0.getEventGradient(i_r8));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r0.isMatchEvent(event_r6));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", event_r6.image_url);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(ctx_r0.getEventEmoji(i_r8));
+    \u0275\u0275advance(3);
+    \u0275\u0275property("title", event_r6.name);
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(event_r6.name);
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate1("\u{1F4C5} ", ctx_r0.formatEventDate(event_r6.event_date));
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate1("\u{1F4CD} ", event_r6.venue);
+    \u0275\u0275advance(6);
+    \u0275\u0275textInterpolate1(" KES ", event_r6.ticket_types[0].price.toFixed(2));
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", event_r6.ticket_types.length > 1);
+    \u0275\u0275advance(2);
+    \u0275\u0275attribute("aria-label", "Get tickets for " + event_r6.name);
+  }
+}
+function LandingPage_main_22_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "main", 35);
+    \u0275\u0275template(1, LandingPage_main_22_article_1_Template, 25, 13, "article", 36);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275property("ngForOf", ctx_r0.events);
   }
 }
 var LandingPage = class _LandingPage {
@@ -48845,7 +48956,7 @@ var LandingPage = class _LandingPage {
   }
   ngOnInit() {
     const cached = this.bookingService.getCachedEvents();
-    if (cached) {
+    if (cached && cached.length > 0) {
       this.events = cached;
       return;
     }
@@ -48869,6 +48980,10 @@ var LandingPage = class _LandingPage {
       }
     });
   }
+  isMatchEvent(event) {
+    const text = (event.name + " " + (event.venue || "")).toLowerCase();
+    return text.includes("bayern") || text.includes("ajax") || text.includes("talanta") || text.includes("vs");
+  }
   formatEventDate(dateString) {
     const date = new Date(dateString);
     const options = {
@@ -48883,16 +48998,14 @@ var LandingPage = class _LandingPage {
   }
   getEventGradient(index) {
     const gradients = [
-      "linear-gradient(135deg,#1a56db22,#1a56db44)",
-      "linear-gradient(135deg,#7c3aed22,#7c3aed44)",
-      "linear-gradient(135deg,#dc262622,#dc262644)",
-      "linear-gradient(135deg,#05966944,#05966966)",
-      "linear-gradient(135deg,#d9770644,#d9770666)"
+      "linear-gradient(135deg,#0f172a,#1e3a8a)",
+      "linear-gradient(135deg,#1e1b4b,#312e81)",
+      "linear-gradient(135deg,#1e293b,#0f172a)"
     ];
     return gradients[index % gradients.length];
   }
   getEventEmoji(index) {
-    const emojis = ["\u{1F3B5}", "\u{1F3A4}", "\u{1F389}", "\u{1F3AD}", "\u{1F3B8}", "\u{1F3AA}", "\u{1F3A8}", "\u{1F3AC}"];
+    const emojis = ["\u26BD", "\u{1F3DF}\uFE0F", "\u{1F39F}\uFE0F", "\u{1F3C6}"];
     return emojis[index % emojis.length];
   }
   getTickets(event) {
@@ -48901,77 +49014,136 @@ var LandingPage = class _LandingPage {
   static \u0275fac = function LandingPage_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _LandingPage)(\u0275\u0275directiveInject(BookingService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ToastrService));
   };
-  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _LandingPage, selectors: [["app-landing-page"]], decls: 19, vars: 4, consts: [[1, "nav"], [1, "nav-logo"], [1, "nav-links"], [1, "nav-link", "nav-link--active"], [1, "lp-hero"], [1, "lp-hero-badge"], [1, "lp-hero-title"], [1, "lp-hero-sub"], ["class", "lp-status", 4, "ngIf"], ["class", "lp-grid", 4, "ngIf"], [1, "lp-footer"], [1, "lp-status"], [1, "lp-spinner"], [1, "lp-status-text"], [2, "font-size", "48px", "margin-bottom", "12px"], [1, "lp-status-title"], [1, "lp-status-sub"], [1, "lp-grid"], ["class", "card event-card", "role", "button", "tabindex", "0", 3, "click", "keyup.enter", 4, "ngFor", "ngForOf"], ["role", "button", "tabindex", "0", 1, "card", "event-card", 3, "click", "keyup.enter"], [1, "ecard-img"], ["loading", "lazy", "class", "ecard-img-photo", 3, "src", "alt", "error", 4, "ngIf"], ["aria-hidden", "true", 1, "ecard-emoji"], [1, "ecard-body"], [1, "ecard-title"], [1, "ecard-meta"], [1, "meta-item"], [1, "ecard-tags"], ["class", "tag tag-blue", 4, "ngFor", "ngForOf"], [1, "btn", "btn-primary", "ecard-btn", 3, "click"], ["loading", "lazy", 1, "ecard-img-photo", 3, "error", "src", "alt"], [1, "tag", "tag-blue"]], template: function LandingPage_Template(rf, ctx) {
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _LandingPage, selectors: [["app-landing-page"]], decls: 28, vars: 6, consts: [[1, "nav"], [1, "nav-brand"], [1, "nav-logo"], [1, "nav-badge-fifa"], ["viewBox", "0 0 100 24", "fill", "currentColor", 1, "fifa-svg"], ["x", "2", "y", "18", "font-family", "Arial Black, Impact, sans-serif", "font-size", "20", "font-weight", "900", "letter-spacing", "1.5"], [1, "nav-links"], ["class", "text-danger font-bold ", "style", "margin-right:-1.4rem;font-size:20px;box-shadow: 1 4px 9px 0 rgba(1, 3, 4, 0.15);", 4, "ngIf"], [1, "nav-link", "nav-link--active"], [1, "lp-hero"], ["class", "hero-strip-wrapper", 4, "ngIf"], [1, "lp-hero-title"], [1, "lp-hero-sub"], ["class", "lp-status", 4, "ngIf"], ["class", "d-flex justify-content-center", 4, "ngIf"], ["class", "lp-grid", 4, "ngIf"], [1, "lp-footer"], [1, "lp-footer-sub"], [1, "text-danger", "font-bold", 2, "margin-right", "-1.4rem", "font-size", "20px", "box-shadow", "1 4px 9px 0 rgba(1, 3, 4, 0.15)"], [1, "hero-strip-wrapper"], [1, "hero-strip"], [4, "ngFor", "ngForOf"], ["class", "strip-tile", 3, "background", 4, "ngFor", "ngForOf"], [1, "strip-tile"], ["class", "strip-tile-img", "loading", "lazy", 3, "src", "alt", "error", 4, "ngIf"], ["aria-hidden", "true", 1, "strip-tile-emoji"], ["loading", "lazy", 1, "strip-tile-img", 3, "error", "src", "alt"], [1, "lp-status"], [1, "lp-spinner"], [1, "lp-status-text"], [1, "d-flex", "justify-content-center"], [1, "d-block"], [2, "font-size", "48px", "margin-bottom", "12px"], [1, "lp-status-title"], [1, "lp-status-sub"], [1, "lp-grid"], ["class", "card event-card", "role", "button", "tabindex", "0", 3, "click", "keyup.enter", 4, "ngFor", "ngForOf"], ["role", "button", "tabindex", "0", 1, "card", "event-card", 3, "click", "keyup.enter"], [1, "ecard-img"], ["class", "fifa-event-pill", 4, "ngIf"], ["loading", "lazy", "class", "ecard-img-photo", 3, "src", "alt", "error", 4, "ngIf"], ["aria-hidden", "true", 1, "ecard-emoji"], [1, "ecard-body"], [1, "ecard-header-group"], [1, "ecard-title", 3, "title"], [1, "ecard-meta"], [1, "meta-item"], [1, "ecard-tags-wrapper"], [1, "ecard-tags"], [1, "text-danger", "fw-bold", "tag", "tag-blue"], [1, "text-dark", "fw-normal", 2, "font-size", "13px", "padding-right", "5px"], [4, "ngIf"], [1, "ecard-action"], [1, "btn", "btn-primary", "ecard-btn", 3, "click"], [1, "fifa-event-pill"], ["loading", "lazy", 1, "ecard-img-photo", 3, "error", "src", "alt"]], template: function LandingPage_Template(rf, ctx) {
     if (rf & 1) {
-      \u0275\u0275elementStart(0, "div", 0)(1, "span", 1);
-      \u0275\u0275text(2, "\u{1F39F}\uFE0F EventHub");
+      \u0275\u0275elementStart(0, "header", 0)(1, "div", 1)(2, "span", 2);
+      \u0275\u0275text(3, "\u{1F39F}\uFE0F EventHub");
       \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(3, "div", 2)(4, "span", 3);
-      \u0275\u0275text(5, "Events");
-      \u0275\u0275elementEnd()()();
-      \u0275\u0275elementStart(6, "div", 4)(7, "div", 5);
-      \u0275\u0275text(8, "\u{1F389} Live events near you");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(9, "h1", 6);
-      \u0275\u0275text(10, "Upcoming Events");
-      \u0275\u0275elementEnd();
-      \u0275\u0275elementStart(11, "p", 7);
-      \u0275\u0275text(12, "Browse and grab your tickets before they sell out");
+      \u0275\u0275elementStart(4, "span", 3);
+      \u0275\u0275namespaceSVG();
+      \u0275\u0275elementStart(5, "svg", 4)(6, "text", 5);
+      \u0275\u0275text(7, "FIFA");
       \u0275\u0275elementEnd()();
-      \u0275\u0275template(13, LandingPage_div_13_Template, 4, 0, "div", 8)(14, LandingPage_div_14_Template, 7, 0, "div", 8)(15, LandingPage_div_15_Template, 2, 1, "div", 9);
-      \u0275\u0275elementStart(16, "footer", 10)(17, "span");
-      \u0275\u0275text(18);
+      \u0275\u0275namespaceHTML();
+      \u0275\u0275elementStart(8, "span");
+      \u0275\u0275text(9, "SANCTIONED FIXTURE");
+      \u0275\u0275elementEnd()()();
+      \u0275\u0275elementStart(10, "div", 6);
+      \u0275\u0275template(11, LandingPage_span_11_Template, 2, 1, "span", 7);
+      \u0275\u0275elementStart(12, "span", 8);
+      \u0275\u0275text(13, "Upcoming Matches & Events");
+      \u0275\u0275elementEnd()()();
+      \u0275\u0275elementStart(14, "section", 9);
+      \u0275\u0275template(15, LandingPage_div_15_Template, 3, 2, "div", 10);
+      \u0275\u0275elementStart(16, "h1", 11);
+      \u0275\u0275text(17, "Official Match Tickets & Events");
+      \u0275\u0275elementEnd();
+      \u0275\u0275elementStart(18, "p", 12);
+      \u0275\u0275text(19, "Select your ticket category and secure verified seats instantly via Paystack");
+      \u0275\u0275elementEnd()();
+      \u0275\u0275template(20, LandingPage_div_20_Template, 4, 0, "div", 13)(21, LandingPage_div_21_Template, 8, 0, "div", 14)(22, LandingPage_main_22_Template, 2, 1, "main", 15);
+      \u0275\u0275elementStart(23, "footer", 16)(24, "div");
+      \u0275\u0275text(25);
+      \u0275\u0275elementEnd();
+      \u0275\u0275elementStart(26, "div", 17);
+      \u0275\u0275text(27, "\u{1F6E1}\uFE0F PCI DSS Level 1 Certified Payments via Paystack");
       \u0275\u0275elementEnd()();
     }
     if (rf & 2) {
-      \u0275\u0275advance(13);
+      \u0275\u0275advance(11);
+      \u0275\u0275property("ngIf", ctx.events.length > 0);
+      \u0275\u0275advance(4);
+      \u0275\u0275property("ngIf", ctx.events.length > 0);
+      \u0275\u0275advance(5);
       \u0275\u0275property("ngIf", ctx.loading);
       \u0275\u0275advance();
       \u0275\u0275property("ngIf", !ctx.loading && ctx.events.length === 0);
       \u0275\u0275advance();
       \u0275\u0275property("ngIf", !ctx.loading && ctx.events.length > 0);
       \u0275\u0275advance(3);
-      \u0275\u0275textInterpolate1("\xA9 ", ctx.currentYear, " EventHub \xB7 Secure payments powered by Paystack");
+      \u0275\u0275textInterpolate1("\xA9 ", ctx.currentYear, " EventHub Ticketing \xB7 Talanta Stadium International Showcase");
     }
-  }, dependencies: [CommonModule, NgForOf, NgIf, TitleCasePipe], styles: ["\n\n.lp-hero[_ngcontent-%COMP%] {\n  padding: 40px 24px 28px;\n  text-align: center;\n}\n.lp-hero-badge[_ngcontent-%COMP%] {\n  display: inline-block;\n  background: #eef3ff;\n  color: #1447c0;\n  font-size: 12px;\n  font-weight: 500;\n  padding: 4px 12px;\n  border-radius: 20px;\n  margin-bottom: 12px;\n  letter-spacing: 0.02em;\n}\n.lp-hero-title[_ngcontent-%COMP%] {\n  font-size: 28px;\n  font-weight: 700;\n  color: var(--text-primary);\n  margin-bottom: 8px;\n  letter-spacing: -0.02em;\n}\n.lp-hero-sub[_ngcontent-%COMP%] {\n  font-size: 14px;\n  color: var(--text-secondary);\n  margin: 0;\n}\n.lp-status[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  padding: 60px 24px;\n  text-align: center;\n}\n.lp-status-title[_ngcontent-%COMP%] {\n  font-size: 18px;\n  font-weight: 500;\n  color: var(--text-primary);\n  margin-bottom: 8px;\n}\n.lp-status-sub[_ngcontent-%COMP%] {\n  font-size: 13px;\n  color: var(--text-secondary);\n}\n.lp-status-text[_ngcontent-%COMP%] {\n  font-size: 13px;\n  color: var(--text-secondary);\n  margin-top: 12px;\n}\n.lp-spinner[_ngcontent-%COMP%] {\n  width: 36px;\n  height: 36px;\n  border: 3px solid var(--border);\n  border-top-color: #1a56db;\n  border-radius: 50%;\n  animation: _ngcontent-%COMP%_lp-spin 0.8s linear infinite;\n}\n@keyframes _ngcontent-%COMP%_lp-spin {\n  to {\n    transform: rotate(360deg);\n  }\n}\n.lp-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(3, 1fr);\n  gap: 20px;\n  padding: 0 32px 48px;\n  max-width: 1280px;\n  margin: 0 auto;\n}\n.event-card[_ngcontent-%COMP%] {\n  cursor: pointer;\n  transition: transform 0.18s ease, box-shadow 0.18s ease;\n  border-radius: 14px;\n  overflow: hidden;\n}\n.event-card[_ngcontent-%COMP%]:hover {\n  transform: translateY(-3px);\n  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.15);\n}\n.event-card[_ngcontent-%COMP%]:focus-visible {\n  outline: 2px solid #1a56db;\n  outline-offset: 2px;\n}\n.ecard-emoji[_ngcontent-%COMP%] {\n  font-size: 40px;\n  position: relative;\n  z-index: 0;\n}\n.ecard-img-photo[_ngcontent-%COMP%] {\n  position: absolute;\n  inset: 0;\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n  z-index: 1;\n}\n.ecard-tags[_ngcontent-%COMP%] {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 6px;\n  margin-bottom: 12px;\n}\n.ecard-btn[_ngcontent-%COMP%] {\n  width: 100%;\n  justify-content: center;\n  font-size: 13px;\n  padding: 9px;\n  border-radius: 8px;\n}\n.meta-item[_ngcontent-%COMP%] {\n  display: block;\n}\n.nav-link--active[_ngcontent-%COMP%] {\n  color: #fff !important;\n  font-weight: 500;\n}\n.lp-footer[_ngcontent-%COMP%] {\n  text-align: center;\n  padding: 20px 24px;\n  font-size: 11px;\n  color: var(--text-muted);\n  border-top: 0.5px solid var(--border);\n}\n.dropdown-menu[_ngcontent-%COMP%] {\n  animation: _ngcontent-%COMP%_fadeIn 0.15s ease-out;\n}\n@keyframes _ngcontent-%COMP%_fadeIn {\n  from {\n    opacity: 0;\n    transform: translateY(-4px);\n  }\n  to {\n    opacity: 1;\n    transform: translateY(0);\n  }\n}\n@media (max-width: 900px) {\n  .lp-grid[_ngcontent-%COMP%] {\n    grid-template-columns: repeat(2, 1fr);\n    padding: 0 20px 36px;\n    gap: 16px;\n  }\n}\n@media (max-width: 600px) {\n  .lp-grid[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n    padding: 0 14px 28px;\n    gap: 14px;\n  }\n  .lp-hero[_ngcontent-%COMP%] {\n    padding: 22px 16px 18px;\n  }\n  .lp-hero-title[_ngcontent-%COMP%] {\n    font-size: 20px;\n  }\n}\n@media (max-width: 768px) {\n  .lp-hero[_ngcontent-%COMP%] {\n    padding: 28px 16px 20px;\n  }\n  .lp-hero-title[_ngcontent-%COMP%] {\n    font-size: 22px;\n  }\n}\n/*# sourceMappingURL=landing-page.css.map */"] });
+  }, dependencies: [CommonModule, NgForOf, NgIf], styles: ["\n\n.nav[_ngcontent-%COMP%] {\n  height: 60px;\n  background: #111827;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 0 28px;\n  border-bottom: 1px solid rgba(255, 255, 255, 0.1);\n}\n.nav-brand[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 14px;\n}\n.nav-logo[_ngcontent-%COMP%] {\n  color: #ffffff;\n  font-size: 16px;\n  font-weight: 700;\n  letter-spacing: -0.01em;\n}\n.nav-badge-fifa[_ngcontent-%COMP%] {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  background: rgba(26, 86, 219, 0.18);\n  border: 1px solid #1a56db;\n  color: #93c5fd;\n  padding: 3px 10px;\n  border-radius: 6px;\n  font-size: 10px;\n  font-weight: 700;\n  letter-spacing: 0.08em;\n}\n.fifa-svg[_ngcontent-%COMP%] {\n  width: 44px;\n  height: 16px;\n  fill: #60a5fa;\n}\n.lp-hero[_ngcontent-%COMP%] {\n  padding: 36px 20px 32px;\n  text-align: center;\n  background:\n    linear-gradient(\n      180deg,\n      #f8fafc 0%,\n      #ffffff 100%);\n  border-bottom: 1px solid var(--border);\n  overflow: hidden;\n}\n.hero-strip-wrapper[_ngcontent-%COMP%] {\n  width: 100%;\n  overflow: hidden;\n  margin-bottom: 24px;\n  -webkit-mask-image:\n    linear-gradient(\n      to right,\n      transparent 0%,\n      black 8%,\n      black 92%,\n      transparent 100%);\n  mask-image:\n    linear-gradient(\n      to right,\n      transparent 0%,\n      black 8%,\n      black 92%,\n      transparent 100%);\n}\n.hero-strip[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 10px;\n  width: max-content;\n  animation: _ngcontent-%COMP%_strip-scroll 10s linear infinite;\n}\n.hero-strip[_ngcontent-%COMP%]:hover {\n  animation-play-state: paused;\n}\n@keyframes _ngcontent-%COMP%_strip-scroll {\n  0% {\n    transform: translateX(0);\n  }\n  100% {\n    transform: translateX(-50%);\n  }\n}\n.strip-tile[_ngcontent-%COMP%] {\n  width: 100px;\n  height: 64px;\n  border-radius: 10px;\n  overflow: hidden;\n  flex-shrink: 0;\n  position: relative;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);\n}\n.strip-tile-img[_ngcontent-%COMP%] {\n  position: absolute;\n  inset: 0;\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n  z-index: 1;\n  border-radius: 10px;\n}\n.strip-tile-emoji[_ngcontent-%COMP%] {\n  font-size: 24px;\n  z-index: 0;\n  opacity: 0.6;\n}\n.lp-hero-title[_ngcontent-%COMP%] {\n  font-size: 32px;\n  font-weight: 800;\n  color: #0f172a;\n  margin-bottom: 10px;\n  letter-spacing: -0.03em;\n  text-align: center;\n}\n.lp-hero-sub[_ngcontent-%COMP%] {\n  font-size: 15px;\n  color: #64748b;\n  max-width: 620px;\n  margin: 0 auto;\n  text-align: center;\n}\n.lp-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(3, 1fr);\n  gap: 24px;\n  align-items: stretch;\n  padding: 36px 32px 56px;\n  max-width: 1280px;\n  margin: 0 auto;\n}\n.event-card[_ngcontent-%COMP%] {\n  height: 100%;\n  display: flex;\n  flex-direction: column;\n  background: #ffffff;\n  border: 1px solid #e2e8f0;\n  border-radius: 16px;\n  overflow: hidden;\n  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);\n  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;\n  cursor: pointer;\n}\n.event-card[_ngcontent-%COMP%]:hover {\n  transform: translateY(-4px);\n  box-shadow: 0 16px 32px -8px rgba(15, 23, 42, 0.16);\n  border-color: #cbd5e1;\n}\n.ecard-img[_ngcontent-%COMP%] {\n  width: 100%;\n  height: 230px;\n  min-height: 230px;\n  position: relative;\n  overflow: hidden;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  background: #0f172a;\n}\n.ecard-img-photo[_ngcontent-%COMP%] {\n  position: absolute;\n  inset: 0;\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n  z-index: 1;\n}\n.ecard-emoji[_ngcontent-%COMP%] {\n  font-size: 44px;\n  z-index: 0;\n}\n.fifa-event-pill[_ngcontent-%COMP%] {\n  position: absolute;\n  top: 12px;\n  left: 12px;\n  z-index: 2;\n  background: rgba(15, 23, 42, 0.85);\n  -webkit-backdrop-filter: blur(6px);\n  backdrop-filter: blur(6px);\n  color: #f8fafc;\n  font-size: 11px;\n  font-weight: 700;\n  padding: 4px 10px;\n  border-radius: 6px;\n  border: 1px solid rgba(255, 255, 255, 0.2);\n  letter-spacing: 0.02em;\n}\n.ecard-body[_ngcontent-%COMP%] {\n  flex: 1 1 auto;\n  display: flex;\n  flex-direction: column;\n  justify-content: space-between;\n  align-items: center;\n  text-align: center;\n  padding: 20px;\n  gap: 16px;\n}\n.ecard-header-group[_ngcontent-%COMP%] {\n  width: 100%;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  text-align: center;\n}\n.ecard-title[_ngcontent-%COMP%] {\n  font-size: 16px;\n  font-weight: 700;\n  color: #0f172a;\n  line-height: 1.4;\n  margin-bottom: 8px;\n  text-align: center;\n  display: -webkit-box;\n  -webkit-line-clamp: 2;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  min-height: 44px;\n}\n.ecard-meta[_ngcontent-%COMP%] {\n  width: 100%;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 4px;\n  font-size: 12px;\n  color: #64748b;\n  text-align: center;\n}\n.meta-item[_ngcontent-%COMP%] {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  text-align: center;\n}\n.ecard-tags-wrapper[_ngcontent-%COMP%] {\n  width: auto;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  min-height: 48px;\n}\n.ecard-tags[_ngcontent-%COMP%] {\n  display: flex;\n  flex-wrap: wrap;\n  justify-content: center;\n  align-items: center;\n  gap: 6px;\n}\n.tag-blue[_ngcontent-%COMP%] {\n  background: #eff6ff;\n  color: #000000;\n  border: 1px solid #dbeafe;\n  font-weight: 600;\n  font-size: 11px;\n  padding: 4px 10px;\n  border-radius: 20px;\n}\n.ecard-action[_ngcontent-%COMP%] {\n  width: 100%;\n  margin-top: auto;\n}\n.ecard-btn[_ngcontent-%COMP%] {\n  width: 100%;\n  justify-content: center;\n  font-size: 14px;\n  font-weight: 600;\n  padding: 10px;\n  border-radius: 10px;\n  background: #1a56db;\n}\n.ecard-btn[_ngcontent-%COMP%]:hover {\n  background: #1e40af;\n}\n.lp-footer[_ngcontent-%COMP%] {\n  text-align: center;\n  padding: 24px;\n  font-size: 12px;\n  color: #64748b;\n  border-top: 1px solid #e2e8f0;\n  background: #ffffff;\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n}\n.lp-footer-sub[_ngcontent-%COMP%] {\n  font-size: 11px;\n  color: #94a3b8;\n}\n@media (max-width: 1024px) {\n  .lp-grid[_ngcontent-%COMP%] {\n    grid-template-columns: repeat(2, 1fr);\n  }\n}\n@media (max-width: 640px) {\n  .lp-grid[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n    padding: 20px 16px 40px;\n  }\n  .lp-hero-title[_ngcontent-%COMP%] {\n    font-size: 24px;\n  }\n}\n/*# sourceMappingURL=landing-page.css.map */"] });
 };
 (() => {
   (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(LandingPage, [{
     type: Component,
-    args: [{ selector: "app-landing-page", imports: [CommonModule], template: `<!-- Navigation -->\r
-<div class="nav">\r
-  <span class="nav-logo">\u{1F39F}\uFE0F EventHub</span>\r
-  <div class="nav-links">\r
-    <span class="nav-link nav-link--active">Events</span>\r
+    args: [{ selector: "app-landing-page", standalone: true, imports: [CommonModule], template: `<!-- Navigation -->\r
+<header class="nav">\r
+  <div class="nav-brand">\r
+    <span class="nav-logo">\u{1F39F}\uFE0F EventHub</span>\r
+    <span class="nav-badge-fifa">\r
+      <svg class="fifa-svg" viewBox="0 0 100 24" fill="currentColor">\r
+        <text x="2" y="18" font-family="Arial Black, Impact, sans-serif" font-size="20" font-weight="900" letter-spacing="1.5">FIFA</text>\r
+      </svg>\r
+      <span>SANCTIONED FIXTURE</span>\r
+    </span>\r
   </div>\r
-</div>\r
+  <div class="nav-links">\r
+  <span *ngIf="events.length > 0 " class="text-danger font-bold " style="margin-right:-1.4rem;font-size:20px;box-shadow: 1 4px 9px 0 rgba(1, 3, 4, 0.15);">{{events.length}}</span>  <span class="nav-link nav-link--active">Upcoming Matches & Events</span>\r
+  </div>\r
+</header>\r
 \r
 <!-- Hero -->\r
-<div class="lp-hero">\r
-  <div class="lp-hero-badge">\u{1F389} Live events near you</div>\r
-  <h1 class="lp-hero-title">Upcoming Events</h1>\r
-  <p class="lp-hero-sub">Browse and grab your tickets before they sell out</p>\r
-</div>\r
+<section class="lp-hero">\r
+  <!-- Scrolling image strip \u2014 shows event images, falls back to gradient tiles -->\r
+  <div class="hero-strip-wrapper" *ngIf="events.length > 0">\r
+    <div class="hero-strip">\r
+      <!-- Doubled list so the loop is seamless -->\r
+      <ng-container *ngFor="let pass of [0,1]">\r
+        <div\r
+          *ngFor="let event of events; index as i"\r
+          class="strip-tile"\r
+          [style.background]="getEventGradient(i)"\r
+        >\r
+          <img\r
+            *ngIf="event.image_url"\r
+            [src]="event.image_url"\r
+            [alt]="event.name"\r
+            class="strip-tile-img"\r
+            loading="lazy"\r
+            (error)="$any($event.target).style.display='none'"\r
+          />\r
+          <span class="strip-tile-emoji" aria-hidden="true">{{ getEventEmoji(i) }}</span>\r
+        </div>\r
+      </ng-container>\r
+    </div>\r
+  </div>\r
+\r
+  <h1 class="lp-hero-title">Official Match Tickets & Events</h1>\r
+  <p class="lp-hero-sub">Select your ticket category and secure verified seats instantly via Paystack</p>\r
+</section>\r
 \r
 <!-- Loading State -->\r
 <div *ngIf="loading" class="lp-status">\r
   <div class="lp-spinner"></div>\r
-  <div class="lp-status-text">Fetching events\u2026</div>\r
+  <div class="lp-status-text">Fetching official events\u2026</div>\r
 </div>\r
 \r
-<!-- No Events State -->\r
-<div *ngIf="!loading && events.length === 0" class="lp-status">\r
-  <div style="font-size:48px;margin-bottom:12px">\u{1F3AD}</div>\r
-  <div class="lp-status-title">No events right now</div>\r
-  <div class="lp-status-sub">Check back soon \u2014 new events are added regularly.</div>\r
+<!-- Empty State -->\r
+<div *ngIf="!loading && events.length === 0" class="d-flex justify-content-center">\r
+  <div class="d-block">\r
+  <div style="font-size:48px;margin-bottom:12px">\u{1F3DF}\uFE0F</div>\r
+  <div class="lp-status-title">No events available</div>\r
+  <div class="lp-status-sub">Please check back soon for upcoming fixtures.</div></div>\r
 </div>\r
 \r
 <!-- Events Grid -->\r
-<div *ngIf="!loading && events.length > 0" class="lp-grid">\r
-  <div *ngFor="let event of events; index as i" class="card event-card" (click)="getTickets(event)" role="button" tabindex="0" (keyup.enter)="getTickets(event)" [attr.aria-label]="'View tickets for ' + event.name">\r
-\r
-    <!-- Event Image -->\r
+<main *ngIf="!loading && events.length > 0" class="lp-grid">\r
+  <article \r
+    *ngFor="let event of events; index as i" \r
+    class="card event-card" \r
+    (click)="getTickets(event)" \r
+    role="button" \r
+    tabindex="0" \r
+    (keyup.enter)="getTickets(event)"\r
+    [attr.aria-label]="'View tickets for ' + event.name"\r
+  >\r
+    <!-- Card Media -->\r
     <div class="ecard-img" [style.background]="getEventGradient(i)">\r
+      <div *ngIf="isMatchEvent(event)" class="fifa-event-pill">\r
+        \u26BD FIFA Matchday Friendly\r
+      </div>\r
       <img\r
         *ngIf="event.image_url"\r
         [src]="event.image_url"\r
@@ -48983,41 +49155,48 @@ var LandingPage = class _LandingPage {
       <span class="ecard-emoji" aria-hidden="true">{{ getEventEmoji(i) }}</span>\r
     </div>\r
 \r
-    <!-- Event Content -->\r
+    <!-- Centered Card Body with equal height distribution -->\r
     <div class="ecard-body">\r
-      <div class="ecard-title">{{ event.name }}</div>\r
-      <div class="ecard-meta">\r
-        <span class="meta-item">\u{1F4C5} {{ formatEventDate(event.event_date) }}</span>\r
-        <span class="meta-item">\u{1F4CD} {{ event.venue }}</span>\r
+      <div class="ecard-header-group">\r
+        <h2 class="ecard-title" [title]="event.name">{{ event.name }}</h2>\r
+        <div class="ecard-meta">\r
+          <div class="meta-item">\u{1F4C5} {{ formatEventDate(event.event_date) }}</div>\r
+          <div class="meta-item">\u{1F4CD} {{ event.venue }}</div>\r
+        </div>\r
       </div>\r
 \r
-      <!-- Ticket type tags -->\r
-      <div class="ecard-tags">\r
-        <span *ngFor="let ticket of event.ticket_types" class="tag tag-blue">\r
-          {{ ticket.type | titlecase }} \u2014 \${{ ticket.price.toFixed(2) }}\r
-        </span>\r
+      <!-- Ticket price range -->\r
+      <div class="ecard-tags-wrapper">\r
+        <div class="ecard-tags">\r
+          <div class="text-danger fw-bold tag tag-blue">\r
+            <span class="text-dark fw-normal" style="font-size:13px;padding-right:5px">Starting</span> KES {{ event.ticket_types[0].price.toFixed(2) }}<ng-container *ngIf="event.ticket_types.length > 1">  \u2192  KES {{ event.ticket_types[event.ticket_types.length - 1].price.toFixed(2) }}</ng-container>\r
+          </div>\r
+        </div>\r
       </div>\r
 \r
-      <button\r
-        class="btn btn-primary ecard-btn"\r
-        (click)="getTickets(event); $event.stopPropagation()"\r
-        [attr.aria-label]="'Get tickets for ' + event.name"\r
-      >\r
-        Get Tickets \u2192\r
-      </button>\r
+      <!-- Action Button -->\r
+      <div class="ecard-action">\r
+        <button\r
+          class="btn btn-primary ecard-btn"\r
+          (click)="getTickets(event); $event.stopPropagation()"\r
+          [attr.aria-label]="'Get tickets for ' + event.name"\r
+        >\r
+          Get Tickets \u2192 \r
+        </button>\r
+      </div>\r
     </div>\r
-  </div>\r
-</div>\r
+  </article>\r
+</main>\r
 \r
 <!-- Footer -->\r
 <footer class="lp-footer">\r
-  <span>\xA9 {{ currentYear }} EventHub \xB7 Secure payments powered by Paystack</span>\r
-</footer>\r
-`, styles: ["/* src/app/landing-page/landing-page.css */\n.lp-hero {\n  padding: 40px 24px 28px;\n  text-align: center;\n}\n.lp-hero-badge {\n  display: inline-block;\n  background: #eef3ff;\n  color: #1447c0;\n  font-size: 12px;\n  font-weight: 500;\n  padding: 4px 12px;\n  border-radius: 20px;\n  margin-bottom: 12px;\n  letter-spacing: 0.02em;\n}\n.lp-hero-title {\n  font-size: 28px;\n  font-weight: 700;\n  color: var(--text-primary);\n  margin-bottom: 8px;\n  letter-spacing: -0.02em;\n}\n.lp-hero-sub {\n  font-size: 14px;\n  color: var(--text-secondary);\n  margin: 0;\n}\n.lp-status {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  padding: 60px 24px;\n  text-align: center;\n}\n.lp-status-title {\n  font-size: 18px;\n  font-weight: 500;\n  color: var(--text-primary);\n  margin-bottom: 8px;\n}\n.lp-status-sub {\n  font-size: 13px;\n  color: var(--text-secondary);\n}\n.lp-status-text {\n  font-size: 13px;\n  color: var(--text-secondary);\n  margin-top: 12px;\n}\n.lp-spinner {\n  width: 36px;\n  height: 36px;\n  border: 3px solid var(--border);\n  border-top-color: #1a56db;\n  border-radius: 50%;\n  animation: lp-spin 0.8s linear infinite;\n}\n@keyframes lp-spin {\n  to {\n    transform: rotate(360deg);\n  }\n}\n.lp-grid {\n  display: grid;\n  grid-template-columns: repeat(3, 1fr);\n  gap: 20px;\n  padding: 0 32px 48px;\n  max-width: 1280px;\n  margin: 0 auto;\n}\n.event-card {\n  cursor: pointer;\n  transition: transform 0.18s ease, box-shadow 0.18s ease;\n  border-radius: 14px;\n  overflow: hidden;\n}\n.event-card:hover {\n  transform: translateY(-3px);\n  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.15);\n}\n.event-card:focus-visible {\n  outline: 2px solid #1a56db;\n  outline-offset: 2px;\n}\n.ecard-emoji {\n  font-size: 40px;\n  position: relative;\n  z-index: 0;\n}\n.ecard-img-photo {\n  position: absolute;\n  inset: 0;\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n  z-index: 1;\n}\n.ecard-tags {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 6px;\n  margin-bottom: 12px;\n}\n.ecard-btn {\n  width: 100%;\n  justify-content: center;\n  font-size: 13px;\n  padding: 9px;\n  border-radius: 8px;\n}\n.meta-item {\n  display: block;\n}\n.nav-link--active {\n  color: #fff !important;\n  font-weight: 500;\n}\n.lp-footer {\n  text-align: center;\n  padding: 20px 24px;\n  font-size: 11px;\n  color: var(--text-muted);\n  border-top: 0.5px solid var(--border);\n}\n.dropdown-menu {\n  animation: fadeIn 0.15s ease-out;\n}\n@keyframes fadeIn {\n  from {\n    opacity: 0;\n    transform: translateY(-4px);\n  }\n  to {\n    opacity: 1;\n    transform: translateY(0);\n  }\n}\n@media (max-width: 900px) {\n  .lp-grid {\n    grid-template-columns: repeat(2, 1fr);\n    padding: 0 20px 36px;\n    gap: 16px;\n  }\n}\n@media (max-width: 600px) {\n  .lp-grid {\n    grid-template-columns: 1fr;\n    padding: 0 14px 28px;\n    gap: 14px;\n  }\n  .lp-hero {\n    padding: 22px 16px 18px;\n  }\n  .lp-hero-title {\n    font-size: 20px;\n  }\n}\n@media (max-width: 768px) {\n  .lp-hero {\n    padding: 28px 16px 20px;\n  }\n  .lp-hero-title {\n    font-size: 22px;\n  }\n}\n/*# sourceMappingURL=landing-page.css.map */\n"] }]
+  <div>\xA9 {{ currentYear }} EventHub Ticketing \xB7 Talanta Stadium International Showcase</div>\r
+  <div class="lp-footer-sub">\u{1F6E1}\uFE0F PCI DSS Level 1 Certified Payments via Paystack</div>\r
+</footer>`, styles: ["/* src/app/landing-page/landing-page.css */\n.nav {\n  height: 60px;\n  background: #111827;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 0 28px;\n  border-bottom: 1px solid rgba(255, 255, 255, 0.1);\n}\n.nav-brand {\n  display: flex;\n  align-items: center;\n  gap: 14px;\n}\n.nav-logo {\n  color: #ffffff;\n  font-size: 16px;\n  font-weight: 700;\n  letter-spacing: -0.01em;\n}\n.nav-badge-fifa {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  background: rgba(26, 86, 219, 0.18);\n  border: 1px solid #1a56db;\n  color: #93c5fd;\n  padding: 3px 10px;\n  border-radius: 6px;\n  font-size: 10px;\n  font-weight: 700;\n  letter-spacing: 0.08em;\n}\n.fifa-svg {\n  width: 44px;\n  height: 16px;\n  fill: #60a5fa;\n}\n.lp-hero {\n  padding: 36px 20px 32px;\n  text-align: center;\n  background:\n    linear-gradient(\n      180deg,\n      #f8fafc 0%,\n      #ffffff 100%);\n  border-bottom: 1px solid var(--border);\n  overflow: hidden;\n}\n.hero-strip-wrapper {\n  width: 100%;\n  overflow: hidden;\n  margin-bottom: 24px;\n  -webkit-mask-image:\n    linear-gradient(\n      to right,\n      transparent 0%,\n      black 8%,\n      black 92%,\n      transparent 100%);\n  mask-image:\n    linear-gradient(\n      to right,\n      transparent 0%,\n      black 8%,\n      black 92%,\n      transparent 100%);\n}\n.hero-strip {\n  display: flex;\n  gap: 10px;\n  width: max-content;\n  animation: strip-scroll 10s linear infinite;\n}\n.hero-strip:hover {\n  animation-play-state: paused;\n}\n@keyframes strip-scroll {\n  0% {\n    transform: translateX(0);\n  }\n  100% {\n    transform: translateX(-50%);\n  }\n}\n.strip-tile {\n  width: 100px;\n  height: 64px;\n  border-radius: 10px;\n  overflow: hidden;\n  flex-shrink: 0;\n  position: relative;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);\n}\n.strip-tile-img {\n  position: absolute;\n  inset: 0;\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n  z-index: 1;\n  border-radius: 10px;\n}\n.strip-tile-emoji {\n  font-size: 24px;\n  z-index: 0;\n  opacity: 0.6;\n}\n.lp-hero-title {\n  font-size: 32px;\n  font-weight: 800;\n  color: #0f172a;\n  margin-bottom: 10px;\n  letter-spacing: -0.03em;\n  text-align: center;\n}\n.lp-hero-sub {\n  font-size: 15px;\n  color: #64748b;\n  max-width: 620px;\n  margin: 0 auto;\n  text-align: center;\n}\n.lp-grid {\n  display: grid;\n  grid-template-columns: repeat(3, 1fr);\n  gap: 24px;\n  align-items: stretch;\n  padding: 36px 32px 56px;\n  max-width: 1280px;\n  margin: 0 auto;\n}\n.event-card {\n  height: 100%;\n  display: flex;\n  flex-direction: column;\n  background: #ffffff;\n  border: 1px solid #e2e8f0;\n  border-radius: 16px;\n  overflow: hidden;\n  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);\n  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;\n  cursor: pointer;\n}\n.event-card:hover {\n  transform: translateY(-4px);\n  box-shadow: 0 16px 32px -8px rgba(15, 23, 42, 0.16);\n  border-color: #cbd5e1;\n}\n.ecard-img {\n  width: 100%;\n  height: 230px;\n  min-height: 230px;\n  position: relative;\n  overflow: hidden;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  background: #0f172a;\n}\n.ecard-img-photo {\n  position: absolute;\n  inset: 0;\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n  z-index: 1;\n}\n.ecard-emoji {\n  font-size: 44px;\n  z-index: 0;\n}\n.fifa-event-pill {\n  position: absolute;\n  top: 12px;\n  left: 12px;\n  z-index: 2;\n  background: rgba(15, 23, 42, 0.85);\n  -webkit-backdrop-filter: blur(6px);\n  backdrop-filter: blur(6px);\n  color: #f8fafc;\n  font-size: 11px;\n  font-weight: 700;\n  padding: 4px 10px;\n  border-radius: 6px;\n  border: 1px solid rgba(255, 255, 255, 0.2);\n  letter-spacing: 0.02em;\n}\n.ecard-body {\n  flex: 1 1 auto;\n  display: flex;\n  flex-direction: column;\n  justify-content: space-between;\n  align-items: center;\n  text-align: center;\n  padding: 20px;\n  gap: 16px;\n}\n.ecard-header-group {\n  width: 100%;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  text-align: center;\n}\n.ecard-title {\n  font-size: 16px;\n  font-weight: 700;\n  color: #0f172a;\n  line-height: 1.4;\n  margin-bottom: 8px;\n  text-align: center;\n  display: -webkit-box;\n  -webkit-line-clamp: 2;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  min-height: 44px;\n}\n.ecard-meta {\n  width: 100%;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 4px;\n  font-size: 12px;\n  color: #64748b;\n  text-align: center;\n}\n.meta-item {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  text-align: center;\n}\n.ecard-tags-wrapper {\n  width: auto;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  min-height: 48px;\n}\n.ecard-tags {\n  display: flex;\n  flex-wrap: wrap;\n  justify-content: center;\n  align-items: center;\n  gap: 6px;\n}\n.tag-blue {\n  background: #eff6ff;\n  color: #000000;\n  border: 1px solid #dbeafe;\n  font-weight: 600;\n  font-size: 11px;\n  padding: 4px 10px;\n  border-radius: 20px;\n}\n.ecard-action {\n  width: 100%;\n  margin-top: auto;\n}\n.ecard-btn {\n  width: 100%;\n  justify-content: center;\n  font-size: 14px;\n  font-weight: 600;\n  padding: 10px;\n  border-radius: 10px;\n  background: #1a56db;\n}\n.ecard-btn:hover {\n  background: #1e40af;\n}\n.lp-footer {\n  text-align: center;\n  padding: 24px;\n  font-size: 12px;\n  color: #64748b;\n  border-top: 1px solid #e2e8f0;\n  background: #ffffff;\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n}\n.lp-footer-sub {\n  font-size: 11px;\n  color: #94a3b8;\n}\n@media (max-width: 1024px) {\n  .lp-grid {\n    grid-template-columns: repeat(2, 1fr);\n  }\n}\n@media (max-width: 640px) {\n  .lp-grid {\n    grid-template-columns: 1fr;\n    padding: 20px 16px 40px;\n  }\n  .lp-hero-title {\n    font-size: 24px;\n  }\n}\n/*# sourceMappingURL=landing-page.css.map */\n"] }]
   }], () => [{ type: BookingService }, { type: Router }, { type: ToastrService }], null);
 })();
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(LandingPage, { className: "LandingPage", filePath: "src/app/landing-page/landing-page.ts", lineNumber: 14 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(LandingPage, { className: "LandingPage", filePath: "src/app/landing-page/landing-page.ts", lineNumber: 15 });
 })();
 
 // src/app/event-detail/event-detail.ts
@@ -49084,7 +49263,7 @@ function EventDetail_div_7_div_20_Template(rf, ctx) {
     \u0275\u0275advance(3);
     \u0275\u0275textInterpolate1(" ", ticket_r5.description, " ");
     \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate1(" $", ticket_r5.price.toFixed(2), " ");
+    \u0275\u0275textInterpolate1(" KES ", ticket_r5.price.toFixed(2), " ");
   }
 }
 function EventDetail_div_7_span_23_Template(rf, ctx) {
@@ -49111,7 +49290,7 @@ function EventDetail_div_7_div_38_Template(rf, ctx) {
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext(2);
     \u0275\u0275advance(4);
-    \u0275\u0275textInterpolate1("$", ctx_r1.getServiceFee().toFixed(2));
+    \u0275\u0275textInterpolate1("KES ", ctx_r1.getServiceFee().toFixed(2));
   }
 }
 function EventDetail_div_7_Template(rf, ctx) {
@@ -49222,11 +49401,11 @@ function EventDetail_div_7_Template(rf, ctx) {
     \u0275\u0275advance(5);
     \u0275\u0275textInterpolate2("", \u0275\u0275pipeBind1(35, 20, ctx_r1.selectedTicketType), " \xD7 ", ctx_r1.quantity);
     \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate1("$", ctx_r1.getSubtotal().toFixed(2));
+    \u0275\u0275textInterpolate1("KES ", ctx_r1.getSubtotal().toFixed(2));
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", ctx_r1.getServiceFee() > 0);
     \u0275\u0275advance(5);
-    \u0275\u0275textInterpolate1("$", ctx_r1.getTotal().toFixed(2));
+    \u0275\u0275textInterpolate1("KES ", ctx_r1.getTotal().toFixed(2));
     \u0275\u0275advance();
     \u0275\u0275property("disabled", !ctx_r1.selectedTicketDetails);
   }
@@ -49491,7 +49670,7 @@ var EventDetail = class _EventDetail {
           </div>\r
         </div>\r
         <div style="font-size: 14px; font-weight: 500; color: #1a56db">\r
-          \${{ ticket.price.toFixed(2) }}\r
+          KES {{ ticket.price.toFixed(2) }}\r
         </div>\r
       </div>\r
     </div>\r
@@ -49543,7 +49722,7 @@ var EventDetail = class _EventDetail {
         "\r
       >\r
         <span>{{ selectedTicketType | titlecase }} \xD7 {{ quantity }}</span>\r
-        <span>\${{ getSubtotal().toFixed(2) }}</span>\r
+        <span>KES {{ getSubtotal().toFixed(2) }}</span>\r
       </div>\r
       <div\r
         *ngIf="getServiceFee() > 0"\r
@@ -49555,7 +49734,7 @@ var EventDetail = class _EventDetail {
         "\r
       >\r
         <span>Platform fee</span>\r
-        <span>\${{ getServiceFee().toFixed(2) }}</span>\r
+        <span>KES {{ getServiceFee().toFixed(2) }}</span>\r
       </div>\r
       <div\r
         style="\r
@@ -49567,7 +49746,7 @@ var EventDetail = class _EventDetail {
         "\r
       >\r
         <span>Total</span>\r
-        <span style="color: #1a56db">\${{ getTotal().toFixed(2) }}</span>\r
+        <span style="color: #1a56db">KES {{ getTotal().toFixed(2) }}</span>\r
       </div>\r
     </div>\r
 \r
@@ -56728,6 +56907,7 @@ function Checkout_div_7_Template(rf, ctx) {
 }
 var Checkout = class _Checkout {
   router;
+  route;
   bookingService;
   toastr;
   fb;
@@ -56736,14 +56916,10 @@ var Checkout = class _Checkout {
   isProcessing = false;
   paymentBreakdown = null;
   customerInfoForm;
-  // Bound reference kept so we can removeEventListener on destroy
-  onPageShow = (e) => {
-    if (e.persisted) {
-      this.isProcessing = false;
-    }
-  };
-  constructor(router, bookingService, toastr, fb, platformId) {
+  pageshowHandler;
+  constructor(router, route, bookingService, toastr, fb, platformId) {
     this.router = router;
+    this.route = route;
     this.bookingService = bookingService;
     this.toastr = toastr;
     this.fb = fb;
@@ -56751,11 +56927,31 @@ var Checkout = class _Checkout {
   }
   ngOnInit() {
     this.initializeCustomerForm();
-    this.checkoutData = this.bookingService.selectedEventData$();
     this.isProcessing = false;
+    this.checkoutData = this.bookingService.selectedEventData$?.() ?? null;
     if (isPlatformBrowser(this.platformId)) {
-      window.addEventListener("pageshow", this.onPageShow);
-      localStorage.removeItem("paymentReference");
+      if (!this.checkoutData || !this.checkoutData.event) {
+        const stored = localStorage.getItem("activeCheckoutData");
+        if (stored) {
+          try {
+            this.checkoutData = JSON.parse(stored);
+            this.bookingService.updateCheckoutData(this.checkoutData);
+          } catch {
+            this.checkoutData = null;
+          }
+        }
+      }
+      this.pageshowHandler = (event) => {
+        this.isProcessing = false;
+      };
+      window.addEventListener("pageshow", this.pageshowHandler);
+      const isCancelled = this.route.snapshot.queryParamMap.get("cancelled") === "true";
+      if (isCancelled) {
+        this.isProcessing = false;
+        localStorage.removeItem("paymentReference");
+        this.toastr.info("Payment was cancelled. You can review your details and try again.");
+        this.router.navigate([], { queryParams: {}, replaceUrl: true });
+      }
     }
     if (!this.checkoutData || !this.checkoutData.event) {
       this.toastr.warning("Please select an event first", "No event selected");
@@ -56776,8 +56972,8 @@ var Checkout = class _Checkout {
     }
   }
   ngOnDestroy() {
-    if (isPlatformBrowser(this.platformId)) {
-      window.removeEventListener("pageshow", this.onPageShow);
+    if (isPlatformBrowser(this.platformId) && this.pageshowHandler) {
+      window.removeEventListener("pageshow", this.pageshowHandler);
     }
   }
   initializeCustomerForm() {
@@ -56818,25 +57014,53 @@ var Checkout = class _Checkout {
       customerName: this.customerInfoForm.value.fullName.trim(),
       customerPhone: this.customerInfoForm.value.phone.trim()
     };
-    this.bookingService.updateCheckoutData(__spreadProps(__spreadValues({}, this.checkoutData), {
+    const updatedData = __spreadProps(__spreadValues({}, this.checkoutData), {
       customerEmail: paymentRequest.customerEmail,
       customerInfo: {
         fullName: paymentRequest.customerName,
         email: paymentRequest.customerEmail,
         phone: paymentRequest.customerPhone
       }
-    }));
+    });
+    this.bookingService.updateCheckoutData(updatedData);
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem("activeCheckoutData", JSON.stringify(updatedData));
+    }
     this.bookingService.initializePayment(paymentRequest).subscribe({
       next: (response) => {
         this.paymentBreakdown = response.breakdown;
-        this.bookingService.updateCheckoutData(__spreadProps(__spreadValues({}, this.bookingService.selectedEventData$()), {
+        const finalCtx = __spreadProps(__spreadValues({}, updatedData), {
           total: response.breakdown.total,
           currency: response.breakdown.currency,
           breakdown: response.breakdown
-        }));
+        });
+        this.bookingService.updateCheckoutData(finalCtx);
         if (isPlatformBrowser(this.platformId)) {
           localStorage.setItem("paymentReference", response.reference);
-          this.openPaystackPopup(response);
+          const PaystackPop = window.PaystackPop;
+          if (!PaystackPop) {
+            window.location.href = response.authorizationUrl;
+            return;
+          }
+          const handler = PaystackPop.setup({
+            key: "",
+            // not needed when using accessCode
+            access_code: response.accessCode,
+            onSuccess: (transaction) => {
+              this.router.navigate(["/success"], {
+                queryParams: { ref: response.reference }
+              });
+            },
+            onCancel: () => {
+              this.isProcessing = false;
+              localStorage.removeItem("paymentReference");
+              this.router.navigate(["/"]);
+            }
+          });
+          handler.openIframe();
+          setTimeout(() => {
+            this.isProcessing = false;
+          }, 1e4);
         }
       },
       error: (err) => {
@@ -56845,27 +57069,6 @@ var Checkout = class _Checkout {
         this.toastr.error(msg, "Payment error");
       }
     });
-  }
-  openPaystackPopup(response) {
-    if (typeof PaystackPop === "undefined") {
-      window.location.href = response.authorizationUrl;
-      return;
-    }
-    const handler = PaystackPop.setup({
-      key: "",
-      // not needed when using accessCode
-      accessCode: response.accessCode,
-      onSuccess: () => {
-        this.router.navigate(["/success"], {
-          queryParams: { reference: response.reference }
-        });
-      },
-      onCancel: () => {
-        this.isProcessing = false;
-        this.toastr.info("Payment cancelled. You can try again whenever you're ready.");
-      }
-    });
-    handler.openIframe();
   }
   goBack() {
     if (this.checkoutData?.event?.id) {
@@ -56878,10 +57081,10 @@ var Checkout = class _Checkout {
     return this.paymentBreakdown?.total ?? this.checkoutData?.total ?? 0;
   }
   getCurrency() {
-    return this.paymentBreakdown?.currency ?? this.checkoutData?.breakdown?.currency ?? "USD";
+    return this.paymentBreakdown?.currency ?? this.checkoutData?.breakdown?.currency ?? "KES";
   }
   static \u0275fac = function Checkout_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _Checkout)(\u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(BookingService), \u0275\u0275directiveInject(ToastrService), \u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(PLATFORM_ID));
+    return new (__ngFactoryType__ || _Checkout)(\u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(BookingService), \u0275\u0275directiveInject(ToastrService), \u0275\u0275directiveInject(FormBuilder), \u0275\u0275directiveInject(PLATFORM_ID));
   };
   static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _Checkout, selectors: [["app-checkout"]], decls: 8, vars: 2, consts: [[1, "nav"], [1, "nav-logo"], [1, "nav-links"], [1, "nav-link", 3, "click"], ["class", "no-data-state", 4, "ngIf"], ["class", "co-page", 4, "ngIf"], [1, "no-data-state"], [1, "no-data-icon"], [1, "no-data-title"], [1, "no-data-sub"], [1, "btn", "btn-primary", "mt-3", 3, "click"], [1, "co-page"], [1, "steps"], [1, "step-item"], [1, "step-circle", "done"], [1, "step-label", "done-label"], [1, "step-line", "done"], [1, "step-circle", "active"], [1, "step-label", "active-label"], [1, "step-line"], [1, "step-circle", "todo"], [1, "step-label"], ["novalidate", "", 3, "ngSubmit", "formGroup"], [1, "co-card", "mb-3"], [1, "co-card-header"], [1, "summary-event-name"], [1, "summary-meta"], [1, "summary-row"], ["class", "summary-row", 4, "ngIf"], [1, "summary-total"], [1, "total-amount"], [1, "field-row"], [1, "co-field"], ["for", "fullName", 1, "co-label"], ["type", "text", "id", "fullName", "formControlName", "fullName", "placeholder", "Jane Doe", "autocomplete", "name", 1, "co-input"], ["class", "field-error", 4, "ngIf"], ["for", "email", 1, "co-label"], ["type", "email", "id", "email", "formControlName", "email", "placeholder", "jane@example.com", "autocomplete", "email", 1, "co-input"], ["for", "phone", 1, "co-label"], ["type", "tel", "id", "phone", "formControlName", "phone", "placeholder", "+254 700 000 000", "autocomplete", "tel", 1, "co-input"], [1, "policy-box"], [1, "policy-label"], ["type", "checkbox", "formControlName", "policyStatus", 1, "policy-check"], [1, "mt-3"], ["type", "submit", 1, "btn", "btn-primary", "pay-btn", 3, "disabled"], [4, "ngIf"], [1, "pay-trust"], [1, "field-error"], [1, "btn-spinner"]], template: function Checkout_Template(rf, ctx) {
     if (rf & 1) {
@@ -56907,7 +57110,7 @@ var Checkout = class _Checkout {
 (() => {
   (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(Checkout, [{
     type: Component,
-    args: [{ selector: "app-checkout", imports: [CommonModule, ReactiveFormsModule], template: `<!-- Navigation -->\r
+    args: [{ selector: "app-checkout", standalone: true, imports: [CommonModule, ReactiveFormsModule], template: `<!-- Navigation -->\r
 <div class="nav">\r
   <span class="nav-logo">\u{1F39F}\uFE0F EventHub</span>\r
   <div class="nav-links">\r
@@ -57079,55 +57282,69 @@ var Checkout = class _Checkout {
   </form>\r
 </div>\r
 `, styles: ["/* src/app/checkout/checkout.css */\n.co-page {\n  padding: 20px 24px 40px;\n  max-width: 560px;\n  margin: 0 auto;\n}\n.no-data-state {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  min-height: calc(100vh - 52px);\n  padding: 40px 24px;\n  text-align: center;\n}\n.no-data-icon {\n  font-size: 52px;\n  margin-bottom: 16px;\n}\n.no-data-title {\n  font-size: 18px;\n  font-weight: 600;\n  margin-bottom: 8px;\n}\n.no-data-sub {\n  font-size: 13px;\n  color: var(--text-secondary);\n}\n.step-label {\n  font-size: 11px;\n  color: var(--text-muted);\n}\n.done-label {\n  color: var(--text-secondary);\n}\n.active-label {\n  font-weight: 600;\n  color: var(--text-primary);\n}\n.co-card {\n  background: var(--surface-0);\n  border: 0.5px solid var(--border);\n  border-radius: 12px;\n  padding: 16px;\n}\n.co-card-header {\n  font-size: 11px;\n  text-transform: uppercase;\n  letter-spacing: 0.08em;\n  color: var(--text-secondary);\n  font-weight: 600;\n  margin-bottom: 12px;\n}\n.summary-event-name {\n  font-size: 14px;\n  font-weight: 600;\n  margin-bottom: 4px;\n  color: var(--text-primary);\n}\n.summary-meta {\n  font-size: 12px;\n  color: var(--text-secondary);\n  margin-bottom: 12px;\n}\n.summary-row {\n  display: flex;\n  justify-content: space-between;\n  font-size: 12px;\n  color: var(--text-secondary);\n  margin-bottom: 4px;\n}\n.summary-total {\n  display: flex;\n  justify-content: space-between;\n  font-size: 14px;\n  font-weight: 600;\n  border-top: 0.5px solid var(--border);\n  padding-top: 10px;\n  margin-top: 8px;\n}\n.total-amount {\n  color: #1a56db;\n}\n.field-row {\n  display: grid;\n  grid-template-columns: 1fr 1fr;\n  gap: 12px;\n  margin-bottom: 12px;\n}\n@media (max-width: 480px) {\n  .field-row {\n    grid-template-columns: 1fr;\n  }\n}\n.co-field {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  margin-bottom: 12px;\n}\n.co-label {\n  font-size: 12px;\n  font-weight: 500;\n  color: var(--text-secondary);\n}\n.co-input {\n  height: 40px;\n  border: 1px solid var(--border-strong);\n  border-radius: 8px;\n  padding: 0 12px;\n  font-size: 13px;\n  background: var(--surface-0);\n  color: var(--text-primary);\n  outline: none;\n  transition: border-color 0.15s ease, box-shadow 0.15s ease;\n  width: 100%;\n}\n.co-input:focus {\n  border-color: #1a56db;\n  box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.12);\n}\n.co-input-error {\n  border-color: #dc2626 !important;\n}\n.field-error {\n  font-size: 11px;\n  color: #dc2626;\n  margin-top: 2px;\n}\n.policy-box {\n  background: #fffbeb;\n  border: 0.5px solid #f59e0b;\n  border-radius: 10px;\n  padding: 14px;\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n}\n.policy-label {\n  display: flex;\n  align-items: flex-start;\n  gap: 10px;\n  font-size: 13px;\n  color: var(--text-primary);\n  cursor: pointer;\n  line-height: 1.5;\n}\n.policy-check {\n  width: 16px;\n  height: 16px;\n  margin-top: 2px;\n  accent-color: #1a56db;\n  flex-shrink: 0;\n  cursor: pointer;\n}\n.pay-btn {\n  width: 100%;\n  justify-content: center;\n  padding: 14px;\n  font-size: 15px;\n  font-weight: 600;\n  border-radius: 10px;\n}\n.pay-trust {\n  text-align: center;\n  font-size: 11px;\n  color: var(--text-muted);\n  margin-top: 8px;\n  line-height: 1.5;\n}\n.btn-spinner {\n  display: inline-block;\n  width: 14px;\n  height: 14px;\n  border: 2px solid rgba(255, 255, 255, 0.4);\n  border-top-color: #fff;\n  border-radius: 50%;\n  animation: spin 0.7s linear infinite;\n  vertical-align: middle;\n  margin-right: 4px;\n}\n@keyframes spin {\n  to {\n    transform: rotate(360deg);\n  }\n}\n@media (max-width: 480px) {\n  .co-page {\n    padding: 16px 14px 32px;\n  }\n  .pay-btn {\n    font-size: 14px;\n    padding: 13px;\n  }\n}\n/*# sourceMappingURL=checkout.css.map */\n"] }]
-  }], () => [{ type: Router }, { type: BookingService }, { type: ToastrService }, { type: FormBuilder }, { type: Object, decorators: [{
+  }], () => [{ type: Router }, { type: ActivatedRoute }, { type: BookingService }, { type: ToastrService }, { type: FormBuilder }, { type: Object, decorators: [{
     type: Inject,
     args: [PLATFORM_ID]
   }] }], null);
 })();
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(Checkout, { className: "Checkout", filePath: "src/app/checkout/checkout.ts", lineNumber: 19 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(Checkout, { className: "Checkout", filePath: "src/app/checkout/checkout.ts", lineNumber: 16 });
 })();
 
 // src/app/success/success.ts
-function Success_div_3_Template(rf, ctx) {
+function Success_span_4_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 4);
-    \u0275\u0275element(1, "div", 5);
-    \u0275\u0275elementStart(2, "div", 6);
-    \u0275\u0275text(3, "Confirming your payment\u2026");
+    \u0275\u0275elementStart(0, "span", 6);
+    \u0275\u0275text(1, "OFFICIAL MATCH FIXTURE");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(4, "div", 7);
-    \u0275\u0275text(5, "Please wait \u2014 this takes just a moment.");
+  }
+}
+function Success_span_5_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 6);
+    \u0275\u0275text(1, "VERIFIED EVENT PASS");
+    \u0275\u0275elementEnd();
+  }
+}
+function Success_div_6_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 7);
+    \u0275\u0275element(1, "div", 8);
+    \u0275\u0275elementStart(2, "div", 9);
+    \u0275\u0275text(3, "Verifying Payment with Paystack\u2026");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(4, "div", 10);
+    \u0275\u0275text(5, "Please wait \u2014 confirming your order with the payment processor.");
     \u0275\u0275elementEnd()();
   }
 }
-function Success_div_4_Template(rf, ctx) {
+function Success_div_7_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 4)(1, "div", 8);
-    \u0275\u0275text(2, "\u2717");
+    \u0275\u0275elementStart(0, "div", 7)(1, "div", 11);
+    \u0275\u0275text(2, "\u2715");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 6);
-    \u0275\u0275text(4, "Payment cancelled");
+    \u0275\u0275elementStart(3, "div", 9);
+    \u0275\u0275text(4, "Payment Verification Failed");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(5, "div", 7);
+    \u0275\u0275elementStart(5, "div", 10);
     \u0275\u0275text(6);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(7, "div", 9)(8, "button", 10);
-    \u0275\u0275listener("click", function Success_div_4_Template_button_click_8_listener() {
+    \u0275\u0275elementStart(7, "div", 12)(8, "button", 13);
+    \u0275\u0275listener("click", function Success_div_7_Template_button_click_8_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.tryAgain());
     });
-    \u0275\u0275text(9, "Try again");
+    \u0275\u0275text(9, "Return to Checkout");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(10, "button", 11);
-    \u0275\u0275listener("click", function Success_div_4_Template_button_click_10_listener() {
+    \u0275\u0275elementStart(10, "button", 14);
+    \u0275\u0275listener("click", function Success_div_7_Template_button_click_10_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.browseMoreEvents());
     });
-    \u0275\u0275text(11, "\u2190 Back to events");
+    \u0275\u0275text(11, "Back to Events");
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
@@ -57136,20 +57353,20 @@ function Success_div_4_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r1.errorMessage);
   }
 }
-function Success_div_5_Template(rf, ctx) {
+function Success_div_8_Template(rf, ctx) {
   if (rf & 1) {
     const _r3 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 4)(1, "div", 12);
+    \u0275\u0275elementStart(0, "div", 7)(1, "div", 15);
     \u0275\u0275text(2, "\u{1F3AB}");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 6);
-    \u0275\u0275text(4, "No payment reference found");
+    \u0275\u0275elementStart(3, "div", 9);
+    \u0275\u0275text(4, "No Active Payment Reference");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(5, "div", 7);
-    \u0275\u0275text(6, "Please complete checkout to see your ticket confirmation.");
+    \u0275\u0275elementStart(5, "div", 10);
+    \u0275\u0275text(6, "Please select an event to proceed with your booking.");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(7, "button", 13);
-    \u0275\u0275listener("click", function Success_div_5_Template_button_click_7_listener() {
+    \u0275\u0275elementStart(7, "button", 16);
+    \u0275\u0275listener("click", function Success_div_8_Template_button_click_7_listener() {
       \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.browseMoreEvents());
@@ -57158,147 +57375,194 @@ function Success_div_5_Template(rf, ctx) {
     \u0275\u0275elementEnd()();
   }
 }
-function Success_div_6_div_6_Template(rf, ctx) {
+function Success_div_9_p_6_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 29);
-    \u0275\u0275text(1, " Your e-ticket has been emailed to ");
-    \u0275\u0275elementStart(2, "strong");
-    \u0275\u0275text(3);
+    \u0275\u0275elementStart(0, "p", 48);
+    \u0275\u0275text(1, " Your official e-ticket voucher has been sent to");
+    \u0275\u0275element(2, "br");
+    \u0275\u0275elementStart(3, "strong");
+    \u0275\u0275text(4);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext(2);
-    \u0275\u0275advance(3);
+    \u0275\u0275advance(4);
     \u0275\u0275textInterpolate((ctx_r1.booking.customerInfo == null ? null : ctx_r1.booking.customerInfo.email) || ctx_r1.booking.customerEmail);
   }
 }
-function Success_div_6_div_7_Template(rf, ctx) {
+function Success_div_9_p_7_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 29);
-    \u0275\u0275text(1, " Your e-ticket has been sent to your email address. ");
+    \u0275\u0275elementStart(0, "p", 48);
+    \u0275\u0275text(1, " Your booking has been secured successfully. ");
     \u0275\u0275elementEnd();
   }
 }
-function Success_div_6_ng_container_14_Template(rf, ctx) {
+function Success_div_9_span_14_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "div", 30);
-    \u0275\u0275text(2);
+    \u0275\u0275elementStart(0, "span", 49);
+    \u0275\u0275text(1, "STADIUM PASS");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 31)(4, "div")(5, "div", 32);
-    \u0275\u0275text(6, "Date");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(7, "div", 33);
-    \u0275\u0275text(8);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(9, "div")(10, "div", 32);
-    \u0275\u0275text(11, "Tickets");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(12, "div", 33);
-    \u0275\u0275text(13);
-    \u0275\u0275pipe(14, "titlecase");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(15, "div")(16, "div", 32);
-    \u0275\u0275text(17, "Venue");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(18, "div", 33);
-    \u0275\u0275text(19);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(20, "div")(21, "div", 32);
-    \u0275\u0275text(22, "Total paid");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(23, "div", 34);
-    \u0275\u0275text(24);
-    \u0275\u0275elementEnd()()();
-    \u0275\u0275elementContainerEnd();
-  }
-  if (rf & 2) {
-    const ctx_r1 = \u0275\u0275nextContext(2);
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(ctx_r1.booking.event.name);
-    \u0275\u0275advance(6);
-    \u0275\u0275textInterpolate(ctx_r1.formatEventDate(ctx_r1.booking.event.event_date));
-    \u0275\u0275advance(5);
-    \u0275\u0275textInterpolate2("", \u0275\u0275pipeBind1(14, 7, ctx_r1.booking.selectedTicketType), " \xD7 ", ctx_r1.booking.quantity);
-    \u0275\u0275advance(6);
-    \u0275\u0275textInterpolate(ctx_r1.booking.event.venue);
-    \u0275\u0275advance(5);
-    \u0275\u0275textInterpolate2(" ", ctx_r1.currency, " ", ctx_r1.total.toFixed(2), " ");
   }
 }
-function Success_div_6_ng_container_15_Template(rf, ctx) {
+function Success_div_9_span_15_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "div", 30);
-    \u0275\u0275text(2, "Your ticket is confirmed");
+    \u0275\u0275elementStart(0, "span", 49);
+    \u0275\u0275text(1, "E-TICKET");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 35);
-    \u0275\u0275text(4, " Check your email for the full ticket details. ");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementContainerEnd();
   }
 }
-function Success_div_6_Template(rf, ctx) {
+function Success_div_9_div_56_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 50)(1, "span");
+    \u0275\u0275text(2, "\u2022 Stadium gates open ");
+    \u0275\u0275elementStart(3, "strong");
+    \u0275\u0275text(4, "3 hours");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(5, " before kickoff. Arrive early to avoid congestion.");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(6, "span");
+    \u0275\u0275text(7, "\u2022 Show this voucher on your phone or bring a printed copy.");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(8, "span");
+    \u0275\u0275text(9, "\u2022 Valid photo ID matching your name required at security checkpoints.");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(10, "span");
+    \u0275\u0275text(11, "\u2022 Large luggage, glass bottles, and prohibited stadium gear are not permitted.");
+    \u0275\u0275elementEnd()();
+  }
+}
+function Success_div_9_div_57_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 50)(1, "span");
+    \u0275\u0275text(2, "\u2022 Please arrive at least ");
+    \u0275\u0275elementStart(3, "strong");
+    \u0275\u0275text(4, "30 minutes");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(5, " prior to the scheduled start time.");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(6, "span");
+    \u0275\u0275text(7, "\u2022 Show this digital e-ticket or printed pass at the venue entrance.");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(8, "span");
+    \u0275\u0275text(9, "\u2022 Valid photo ID may be requested at the check-in desk.");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(10, "span");
+    \u0275\u0275text(11, "\u2022 Tickets are non-refundable as per the organizer cancellation terms.");
+    \u0275\u0275elementEnd()();
+  }
+}
+function Success_div_9_Template(rf, ctx) {
   if (rf & 1) {
     const _r4 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 14)(1, "div", 15);
-    \u0275\u0275text(2, "\u2705");
+    \u0275\u0275elementStart(0, "div", 17)(1, "div", 18)(2, "div", 19);
+    \u0275\u0275text(3, "\u2713");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 16)(4, "div", 17);
-    \u0275\u0275text(5, "Payment confirmed!");
+    \u0275\u0275elementStart(4, "h1", 20);
+    \u0275\u0275text(5, "Booking Confirmed!");
     \u0275\u0275elementEnd();
-    \u0275\u0275template(6, Success_div_6_div_6_Template, 4, 1, "div", 18)(7, Success_div_6_div_7_Template, 2, 0, "div", 18);
+    \u0275\u0275template(6, Success_div_9_p_6_Template, 5, 1, "p", 21)(7, Success_div_9_p_7_Template, 2, 0, "p", 21);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(8, "div", 19)(9, "div", 20);
-    \u0275\u0275text(10, "Order number");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(11, "div", 21);
+    \u0275\u0275elementStart(8, "div", 22)(9, "div", 23)(10, "div", 24)(11, "span", 25);
     \u0275\u0275text(12);
+    \u0275\u0275pipe(13, "uppercase");
     \u0275\u0275elementEnd();
-    \u0275\u0275element(13, "div", 22);
-    \u0275\u0275template(14, Success_div_6_ng_container_14_Template, 25, 9, "ng-container", 23)(15, Success_div_6_ng_container_15_Template, 5, 0, "ng-container", 23);
+    \u0275\u0275template(14, Success_div_9_span_14_Template, 2, 0, "span", 26)(15, Success_div_9_span_15_Template, 2, 0, "span", 26);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(16, "div", 24)(17, "div", 25);
-    \u0275\u0275text(18, "\u{1F4CB} What to bring");
+    \u0275\u0275elementStart(16, "div", 27)(17, "span", 28);
+    \u0275\u0275text(18, "CONFIRMATION REF");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(19, "div", 26)(20, "span");
-    \u0275\u0275text(21, "\u2022 This confirmation (digital or printed)");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(22, "span");
-    \u0275\u0275text(23, "\u2022 Valid photo ID matching your name");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(24, "span");
-    \u0275\u0275text(25, "\u2022 Arrive 30 minutes early");
+    \u0275\u0275elementStart(19, "span", 29);
+    \u0275\u0275text(20);
     \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(26, "button", 27);
-    \u0275\u0275listener("click", function Success_div_6_Template_button_click_26_listener() {
-      \u0275\u0275restoreView(_r4);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.browseMoreEvents());
-    });
-    \u0275\u0275text(27, " Browse more events ");
+    \u0275\u0275element(21, "div", 30);
+    \u0275\u0275elementStart(22, "div", 31)(23, "div", 32);
+    \u0275\u0275text(24);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(28, "button", 28);
-    \u0275\u0275listener("click", function Success_div_6_Template_button_click_28_listener() {
+    \u0275\u0275elementStart(25, "div", 33)(26, "div", 34)(27, "span", 35);
+    \u0275\u0275text(28, "Date & Time");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(29, "span", 36);
+    \u0275\u0275text(30);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(31, "div", 34)(32, "span", 35);
+    \u0275\u0275text(33, "Ticket Type");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(34, "span", 36);
+    \u0275\u0275text(35);
+    \u0275\u0275pipe(36, "titlecase");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(37, "div", 34)(38, "span", 35);
+    \u0275\u0275text(39, "Venue");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(40, "span", 36);
+    \u0275\u0275text(41);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(42, "div", 34)(43, "span", 35);
+    \u0275\u0275text(44, "Total Paid");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(45, "span", 37);
+    \u0275\u0275text(46);
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(47, "div", 38);
+    \u0275\u0275element(48, "div", 39);
+    \u0275\u0275elementStart(49, "div", 40);
+    \u0275\u0275text(50);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(51, "div", 41);
+    \u0275\u0275text(52, "Present digital voucher or printed copy at the entrance check-in");
+    \u0275\u0275elementEnd()()()();
+    \u0275\u0275elementStart(53, "div", 42)(54, "div", 43);
+    \u0275\u0275text(55, "\u{1F4CB} Entry Guidelines & What to Bring");
+    \u0275\u0275elementEnd();
+    \u0275\u0275template(56, Success_div_9_div_56_Template, 12, 0, "div", 44)(57, Success_div_9_div_57_Template, 12, 0, "div", 44);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(58, "div", 45)(59, "button", 46);
+    \u0275\u0275listener("click", function Success_div_9_Template_button_click_59_listener() {
       \u0275\u0275restoreView(_r4);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.printPage());
     });
-    \u0275\u0275text(29, " \u{1F5A8}\uFE0F Print this page ");
-    \u0275\u0275elementEnd()();
+    \u0275\u0275text(60, " \u{1F5A8}\uFE0F Print Ticket Voucher ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(61, "button", 47);
+    \u0275\u0275listener("click", function Success_div_9_Template_button_click_61_listener() {
+      \u0275\u0275restoreView(_r4);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.browseMoreEvents());
+    });
+    \u0275\u0275text(62, " Browse More Events ");
+    \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
     \u0275\u0275advance(6);
-    \u0275\u0275property("ngIf", ctx_r1.booking == null ? null : ctx_r1.booking.customerInfo == null ? null : ctx_r1.booking.customerInfo.email);
+    \u0275\u0275property("ngIf", (ctx_r1.booking == null ? null : ctx_r1.booking.customerInfo == null ? null : ctx_r1.booking.customerInfo.email) || (ctx_r1.booking == null ? null : ctx_r1.booking.customerEmail));
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", !(ctx_r1.booking == null ? null : ctx_r1.booking.customerInfo == null ? null : ctx_r1.booking.customerInfo.email));
+    \u0275\u0275property("ngIf", !(ctx_r1.booking == null ? null : ctx_r1.booking.customerInfo == null ? null : ctx_r1.booking.customerInfo.email) && !(ctx_r1.booking == null ? null : ctx_r1.booking.customerEmail));
+    \u0275\u0275advance(5);
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind1(13, 16, (ctx_r1.booking == null ? null : ctx_r1.booking.event == null ? null : ctx_r1.booking.event.venue) || "OFFICIAL EVENT PASS"));
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngIf", ctx_r1.isSportsEvent());
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", !ctx_r1.isSportsEvent());
     \u0275\u0275advance(5);
     \u0275\u0275textInterpolate(ctx_r1.orderNumber);
-    \u0275\u0275advance(2);
-    \u0275\u0275property("ngIf", ctx_r1.booking && ctx_r1.booking.event);
+    \u0275\u0275advance(4);
+    \u0275\u0275textInterpolate1(" ", ctx_r1.getEventName(), " ");
+    \u0275\u0275advance(6);
+    \u0275\u0275textInterpolate(ctx_r1.formatEventDate(ctx_r1.booking == null ? null : ctx_r1.booking.event == null ? null : ctx_r1.booking.event.event_date));
+    \u0275\u0275advance(5);
+    \u0275\u0275textInterpolate2(" ", \u0275\u0275pipeBind1(36, 18, (ctx_r1.booking == null ? null : ctx_r1.booking.selectedTicketType) || "Standard"), " \xD7 ", (ctx_r1.booking == null ? null : ctx_r1.booking.quantity) || 1, " ");
+    \u0275\u0275advance(6);
+    \u0275\u0275textInterpolate(ctx_r1.getEventVenue());
+    \u0275\u0275advance(5);
+    \u0275\u0275textInterpolate2(" ", ctx_r1.currency, " ", ctx_r1.total.toFixed(2), " ");
+    \u0275\u0275advance(4);
+    \u0275\u0275textInterpolate(ctx_r1.paymentReference || ctx_r1.orderNumber);
+    \u0275\u0275advance(6);
+    \u0275\u0275property("ngIf", ctx_r1.isSportsEvent());
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", !ctx_r1.booking || !ctx_r1.booking.event);
+    \u0275\u0275property("ngIf", !ctx_r1.isSportsEvent());
   }
 }
 var Success = class _Success {
@@ -57312,6 +57576,7 @@ var Success = class _Success {
   total = 0;
   currency = "USD";
   booking = null;
+  paymentReference = "";
   sub;
   constructor(router, route, bookingService, platformId) {
     this.router = router;
@@ -57320,12 +57585,27 @@ var Success = class _Success {
     this.platformId = platformId;
   }
   ngOnInit() {
-    const ref = this.route.snapshot.queryParamMap.get("reference") || this.route.snapshot.queryParamMap.get("trxref") || // localStorage is browser-only
-    (isPlatformBrowser(this.platformId) ? localStorage.getItem("paymentReference") : null);
+    const ref = this.route.snapshot.queryParamMap.get("ref") || this.route.snapshot.queryParamMap.get("reference") || this.route.snapshot.queryParamMap.get("trxref") || (isPlatformBrowser(this.platformId) ? localStorage.getItem("paymentReference") : null);
     if (!ref) {
       this.pageState = "no-data";
       return;
     }
+    this.paymentReference = ref;
+    let ctx = this.bookingService.selectedEventData$();
+    if ((!ctx || !ctx.event) && isPlatformBrowser(this.platformId)) {
+      try {
+        const stored = localStorage.getItem("activeCheckoutData");
+        if (stored) {
+          ctx = JSON.parse(stored);
+          this.bookingService.updateCheckoutData(ctx);
+        }
+      } catch (e) {
+        ctx = null;
+      }
+    }
+    this.booking = ctx && ctx.event ? ctx : null;
+    this.total = ctx?.total ?? 0;
+    this.currency = ctx?.breakdown?.currency ?? ctx?.currency ?? "USD";
     this.verifyPayment(ref);
   }
   ngOnDestroy() {
@@ -57333,32 +57613,34 @@ var Success = class _Success {
   }
   verifyPayment(reference) {
     this.pageState = "verifying";
-    this.sub = this.bookingService.verifyPayment({ reference }).subscribe({
+    const phone = this.booking?.customerInfo?.phone ?? this.booking?.customerPhone ?? void 0;
+    this.sub = this.bookingService.verifyPayment({ reference, customerPhone: phone }).subscribe({
       next: (res) => {
-        this.orderNumber = res.orderNumber;
-        const ctx = this.bookingService.selectedEventData$();
-        this.booking = ctx && ctx.event ? ctx : null;
-        this.total = ctx?.total ?? 0;
-        this.currency = ctx?.breakdown?.currency ?? ctx?.currency ?? "USD";
-        if (ctx?.event) {
+        this.orderNumber = res?.orderNumber || res?.order_number || reference;
+        if (this.booking?.event) {
           this.bookingService.updateBookingConfirmation({
-            event: ctx.event,
-            selectedTicketType: ctx.selectedTicketType,
-            quantity: ctx.quantity,
-            customerInfo: ctx.customerInfo ?? { fullName: "", email: ctx.customerEmail ?? "", phone: "" },
-            orderNumber: res.orderNumber,
-            total: ctx.total,
+            event: this.booking.event,
+            selectedTicketType: this.booking.selectedTicketType,
+            quantity: this.booking.quantity,
+            customerInfo: this.booking.customerInfo ?? {
+              fullName: "",
+              email: this.booking.customerEmail ?? "",
+              phone: ""
+            },
+            orderNumber: this.orderNumber,
+            total: this.total,
             currency: this.currency,
             paymentReference: reference
           });
         }
         if (isPlatformBrowser(this.platformId)) {
           localStorage.removeItem("paymentReference");
+          localStorage.removeItem("activeCheckoutData");
         }
         this.pageState = "success";
       },
       error: (err) => {
-        this.errorMessage = err?.error?.message ?? err?.message ?? "Payment verification failed.";
+        this.errorMessage = err?.error?.message ?? err?.message ?? "Payment verification failed. Please contact support.";
         this.pageState = "failed";
         if (isPlatformBrowser(this.platformId)) {
           localStorage.removeItem("paymentReference");
@@ -57366,11 +57648,27 @@ var Success = class _Success {
       }
     });
   }
+  /**
+   * Dynamically checks if the current booking is a sports/stadium match
+   */
+  isSportsEvent() {
+    if (!this.booking?.event)
+      return false;
+    const text = `${this.booking.event.name} ${this.booking.event.venue || ""}`.toLowerCase();
+    return text.includes("vs") || text.includes("stadium") || text.includes("bayern") || text.includes("ajax") || text.includes("cup");
+  }
+  getEventVenue() {
+    return this.booking?.event?.venue || "Venue to be confirmed";
+  }
+  getEventName() {
+    return this.booking?.event?.name || "Confirmed Event Booking";
+  }
   formatEventDate(dateString) {
     if (!dateString)
-      return "";
+      return "Date specified on e-ticket";
     const date = new Date(dateString);
     const opts = {
+      weekday: "short",
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -57381,13 +57679,11 @@ var Success = class _Success {
     return date.toLocaleDateString("en-US", opts);
   }
   browseMoreEvents() {
+    this.bookingService.clearCheckoutData();
     this.router.navigate(["/"]);
   }
   tryAgain() {
     this.router.navigate(["/checkout"]);
-  }
-  retryPayment() {
-    this.router.navigate(["/"]);
   }
   printPage() {
     if (isPlatformBrowser(this.platformId)) {
@@ -57397,15 +57693,21 @@ var Success = class _Success {
   static \u0275fac = function Success_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _Success)(\u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(BookingService), \u0275\u0275directiveInject(PLATFORM_ID));
   };
-  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _Success, selectors: [["app-success"]], decls: 7, vars: 4, consts: [[1, "nav"], [1, "nav-logo"], ["class", "status-center", 4, "ngIf"], ["class", "success-page", 4, "ngIf"], [1, "status-center"], [1, "spinner"], [1, "status-title"], [1, "status-sub"], [1, "fail-icon"], [2, "display", "flex", "gap", "10px", "margin-top", "16px", "flex-wrap", "wrap", "justify-content", "center"], [1, "btn", "btn-primary", 3, "click"], [1, "btn", "btn-outline", 3, "click"], [2, "font-size", "48px", "margin-bottom", "12px"], [1, "btn", "btn-primary", "mt-3", 3, "click"], [1, "success-page"], [1, "success-icon"], [1, "text-center", "mb-3"], [1, "success-heading"], ["class", "success-sub", 4, "ngIf"], [1, "ticket-stub", "mb-3"], [1, "ticket-label"], [1, "order-num"], [1, "ticket-divider"], [4, "ngIf"], [1, "bring-box", "mb-3"], [1, "bring-title"], [1, "bring-list"], [1, "btn", "btn-primary", "action-btn", "mb-2", 3, "click"], [1, "btn", "btn-outline", "action-btn", 3, "click"], [1, "success-sub"], [1, "ticket-event-name"], [1, "ticket-grid"], [1, "ticket-field-label"], [1, "ticket-field-value"], [1, "ticket-field-value", "total-paid"], [2, "font-size", "12px", "color", "var(--text-secondary)", "margin-top", "6px"]], template: function Success_Template(rf, ctx) {
+  static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _Success, selectors: [["app-success"]], decls: 10, vars: 6, consts: [[1, "nav"], [1, "nav-brand"], [1, "nav-logo"], ["class", "nav-fifa-pill", 4, "ngIf"], ["class", "status-center", 4, "ngIf"], ["class", "success-page", 4, "ngIf"], [1, "nav-fifa-pill"], [1, "status-center"], [1, "spinner"], [1, "status-title"], [1, "status-sub"], [1, "fail-icon"], [1, "btn-group-centered", "mt-3"], [1, "btn", "btn-primary", 3, "click"], [1, "btn", "btn-outline", 3, "click"], [2, "font-size", "48px", "margin-bottom", "12px"], [1, "btn", "btn-primary", "mt-3", 3, "click"], [1, "success-page"], [1, "success-badge-wrapper"], [1, "success-badge-icon"], [1, "success-heading"], ["class", "success-sub", 4, "ngIf"], [1, "ticket-stub"], [1, "stub-header"], [1, "stub-brand"], [1, "stadium-tag"], ["class", "gate-tag", 4, "ngIf"], [1, "stub-ref-group"], [1, "stub-ref-label"], [1, "order-num"], [1, "stub-divider"], [1, "stub-body"], [1, "stub-match-title"], [1, "ticket-grid"], [1, "grid-item"], [1, "ticket-field-label"], [1, "ticket-field-value"], [1, "ticket-field-value", "total-paid"], [1, "stub-barcode-area"], [1, "barcode-lines"], [1, "barcode-code"], [1, "barcode-sub"], [1, "bring-box", "mb-3"], [1, "bring-title"], ["class", "bring-list", 4, "ngIf"], [1, "actions-wrapper"], [1, "btn", "btn-outline", "action-btn", 3, "click"], [1, "btn", "btn-primary", "action-btn", 3, "click"], [1, "success-sub"], [1, "gate-tag"], [1, "bring-list"]], template: function Success_Template(rf, ctx) {
     if (rf & 1) {
-      \u0275\u0275elementStart(0, "div", 0)(1, "span", 1);
-      \u0275\u0275text(2, "\u{1F39F}\uFE0F EventHub");
+      \u0275\u0275elementStart(0, "nav", 0)(1, "div", 1)(2, "span", 2);
+      \u0275\u0275text(3, "\u{1F39F}\uFE0F EventHub");
+      \u0275\u0275elementEnd();
+      \u0275\u0275template(4, Success_span_4_Template, 2, 0, "span", 3)(5, Success_span_5_Template, 2, 0, "span", 3);
       \u0275\u0275elementEnd()();
-      \u0275\u0275template(3, Success_div_3_Template, 6, 0, "div", 2)(4, Success_div_4_Template, 12, 1, "div", 2)(5, Success_div_5_Template, 9, 0, "div", 2)(6, Success_div_6_Template, 30, 5, "div", 3);
+      \u0275\u0275template(6, Success_div_6_Template, 6, 0, "div", 4)(7, Success_div_7_Template, 12, 1, "div", 4)(8, Success_div_8_Template, 9, 0, "div", 4)(9, Success_div_9_Template, 63, 20, "div", 5);
     }
     if (rf & 2) {
-      \u0275\u0275advance(3);
+      \u0275\u0275advance(4);
+      \u0275\u0275property("ngIf", ctx.isSportsEvent());
+      \u0275\u0275advance();
+      \u0275\u0275property("ngIf", !ctx.isSportsEvent());
+      \u0275\u0275advance();
       \u0275\u0275property("ngIf", ctx.pageState === "verifying");
       \u0275\u0275advance();
       \u0275\u0275property("ngIf", ctx.pageState === "failed");
@@ -57414,119 +57716,148 @@ var Success = class _Success {
       \u0275\u0275advance();
       \u0275\u0275property("ngIf", ctx.pageState === "success");
     }
-  }, dependencies: [CommonModule, NgIf, TitleCasePipe], styles: ["\n\n.status-center[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  min-height: calc(100vh - 52px);\n  padding: 40px 24px;\n  text-align: center;\n}\n.status-title[_ngcontent-%COMP%] {\n  font-size: 18px;\n  font-weight: 500;\n  margin-bottom: 8px;\n  color: var(--text-primary);\n}\n.status-sub[_ngcontent-%COMP%] {\n  font-size: 13px;\n  color: var(--text-secondary);\n  max-width: 340px;\n  line-height: 1.6;\n}\n.spinner[_ngcontent-%COMP%] {\n  width: 40px;\n  height: 40px;\n  border: 3px solid var(--border);\n  border-top-color: #1a56db;\n  border-radius: 50%;\n  animation: _ngcontent-%COMP%_spin 0.8s linear infinite;\n  margin-bottom: 20px;\n}\n@keyframes _ngcontent-%COMP%_spin {\n  to {\n    transform: rotate(360deg);\n  }\n}\n.fail-icon[_ngcontent-%COMP%] {\n  width: 64px;\n  height: 64px;\n  border-radius: 50%;\n  background: #fee2e2;\n  color: #dc2626;\n  font-size: 28px;\n  font-weight: 700;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  margin-bottom: 16px;\n}\n.success-page[_ngcontent-%COMP%] {\n  padding: 40px 24px;\n  max-width: 480px;\n  margin: 0 auto;\n  display: flex;\n  flex-direction: column;\n  align-items: stretch;\n}\n.success-heading[_ngcontent-%COMP%] {\n  font-size: 20px;\n  font-weight: 600;\n  margin-bottom: 6px;\n  color: var(--text-primary);\n}\n.success-sub[_ngcontent-%COMP%] {\n  font-size: 13px;\n  color: var(--text-secondary);\n  line-height: 1.5;\n}\n.ticket-divider[_ngcontent-%COMP%] {\n  border-top: 1.5px dashed #1a56db;\n  margin: 14px 0;\n}\n.ticket-label[_ngcontent-%COMP%] {\n  font-size: 11px;\n  text-transform: uppercase;\n  letter-spacing: 0.1em;\n  color: #4b6cb7;\n  margin-bottom: 6px;\n}\n.ticket-event-name[_ngcontent-%COMP%] {\n  font-size: 14px;\n  font-weight: 600;\n  margin-bottom: 12px;\n  color: var(--text-primary);\n}\n.ticket-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: 1fr 1fr;\n  gap: 12px;\n}\n.ticket-field-label[_ngcontent-%COMP%] {\n  font-size: 10px;\n  text-transform: uppercase;\n  letter-spacing: 0.08em;\n  color: var(--text-muted);\n  margin-bottom: 3px;\n}\n.ticket-field-value[_ngcontent-%COMP%] {\n  font-size: 12px;\n  color: var(--text-secondary);\n  line-height: 1.4;\n}\n.total-paid[_ngcontent-%COMP%] {\n  font-weight: 600;\n  color: #1a56db !important;\n}\n.bring-box[_ngcontent-%COMP%] {\n  background: #fffbeb;\n  border: 0.5px solid #f59e0b;\n  border-radius: 10px;\n  padding: 14px;\n}\n.bring-title[_ngcontent-%COMP%] {\n  font-size: 12px;\n  font-weight: 600;\n  color: #92400e;\n  margin-bottom: 8px;\n}\n.bring-list[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  font-size: 12px;\n  color: #78350f;\n  line-height: 1.6;\n}\n.action-btn[_ngcontent-%COMP%] {\n  width: 100%;\n  justify-content: center;\n  padding: 12px;\n  font-size: 14px;\n}\n@media print {\n  .nav[_ngcontent-%COMP%], \n   .action-btn[_ngcontent-%COMP%] {\n    display: none !important;\n  }\n  .success-page[_ngcontent-%COMP%] {\n    padding: 0;\n    max-width: 100%;\n  }\n  .bring-box[_ngcontent-%COMP%] {\n    border: 1px solid #f59e0b;\n  }\n}\n@media (max-width: 480px) {\n  .success-page[_ngcontent-%COMP%] {\n    padding: 24px 16px;\n  }\n  .ticket-grid[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n    gap: 8px;\n  }\n}\n/*# sourceMappingURL=success.css.map */"] });
+  }, dependencies: [CommonModule, NgIf, UpperCasePipe, TitleCasePipe], styles: ["\n\n.nav[_ngcontent-%COMP%] {\n  height: 56px;\n  background: #0f172a;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 0 24px;\n  border-bottom: 1px solid rgba(255, 255, 255, 0.1);\n}\n.nav-brand[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n}\n.nav-logo[_ngcontent-%COMP%] {\n  color: #ffffff;\n  font-size: 15px;\n  font-weight: 700;\n}\n.nav-fifa-pill[_ngcontent-%COMP%] {\n  background: rgba(26, 86, 219, 0.2);\n  border: 1px solid #1a56db;\n  color: #93c5fd;\n  font-size: 10px;\n  font-weight: 700;\n  padding: 3px 8px;\n  border-radius: 4px;\n  letter-spacing: 0.05em;\n}\n.status-center[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  min-height: calc(100vh - 120px);\n  padding: 40px 20px;\n  text-align: center;\n}\n.status-title[_ngcontent-%COMP%] {\n  font-size: 20px;\n  font-weight: 700;\n  margin-bottom: 8px;\n  color: #0f172a;\n  text-align: center;\n}\n.status-sub[_ngcontent-%COMP%] {\n  font-size: 14px;\n  color: #64748b;\n  max-width: 440px;\n  line-height: 1.6;\n  text-align: center;\n}\n.spinner[_ngcontent-%COMP%] {\n  width: 44px;\n  height: 44px;\n  border: 3.5px solid #e2e8f0;\n  border-top-color: #1a56db;\n  border-radius: 50%;\n  animation: _ngcontent-%COMP%_spin 0.8s linear infinite;\n  margin-bottom: 20px;\n}\n@keyframes _ngcontent-%COMP%_spin {\n  to {\n    transform: rotate(360deg);\n  }\n}\n.fail-icon[_ngcontent-%COMP%] {\n  width: 60px;\n  height: 60px;\n  border-radius: 50%;\n  background: #fee2e2;\n  color: #b91c1c;\n  font-size: 26px;\n  font-weight: 700;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  margin-bottom: 16px;\n}\n.btn-group-centered[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 12px;\n  justify-content: center;\n  flex-wrap: wrap;\n}\n.success-page[_ngcontent-%COMP%] {\n  padding: 36px 20px 60px;\n  max-width: 540px;\n  margin: 0 auto;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  text-align: center;\n}\n.success-badge-wrapper[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  text-align: center;\n  margin-bottom: 24px;\n}\n.success-badge-icon[_ngcontent-%COMP%] {\n  width: 56px;\n  height: 56px;\n  border-radius: 50%;\n  background: #dcfce7;\n  color: #15803d;\n  font-size: 28px;\n  font-weight: 800;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  margin-bottom: 12px;\n  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);\n}\n.success-heading[_ngcontent-%COMP%] {\n  font-size: 24px;\n  font-weight: 800;\n  color: #0f172a;\n  margin-bottom: 6px;\n}\n.success-sub[_ngcontent-%COMP%] {\n  font-size: 13px;\n  color: #64748b;\n  line-height: 1.5;\n}\n.ticket-stub[_ngcontent-%COMP%] {\n  width: 100%;\n  background: #ffffff;\n  border: 1px solid #cbd5e1;\n  border-radius: 14px;\n  overflow: hidden;\n  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08);\n  margin-bottom: 20px;\n  text-align: center;\n}\n.stub-header[_ngcontent-%COMP%] {\n  background: #0f172a;\n  color: #ffffff;\n  padding: 16px 20px;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 8px;\n}\n.stub-brand[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-wrap: wrap;\n  justify-content: center;\n}\n.stadium-tag[_ngcontent-%COMP%] {\n  font-size: 10px;\n  font-weight: 800;\n  letter-spacing: 0.08em;\n  color: #93c5fd;\n}\n.gate-tag[_ngcontent-%COMP%] {\n  background: #1a56db;\n  color: #ffffff;\n  font-size: 9px;\n  font-weight: 700;\n  padding: 2px 6px;\n  border-radius: 4px;\n  letter-spacing: 0.06em;\n}\n.stub-ref-group[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 2px;\n}\n.stub-ref-label[_ngcontent-%COMP%] {\n  font-size: 9px;\n  letter-spacing: 0.1em;\n  color: #94a3b8;\n}\n.order-num[_ngcontent-%COMP%] {\n  font-family: var(--font-mono, monospace);\n  font-size: 18px;\n  font-weight: 700;\n  color: #38bdf8;\n  letter-spacing: 2px;\n}\n.stub-divider[_ngcontent-%COMP%] {\n  border-top: 2px dashed #e2e8f0;\n  position: relative;\n  margin: 0;\n}\n.stub-body[_ngcontent-%COMP%] {\n  padding: 24px 20px;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n}\n.stub-match-title[_ngcontent-%COMP%] {\n  font-size: 16px;\n  font-weight: 700;\n  color: #0f172a;\n  line-height: 1.4;\n  margin-bottom: 20px;\n  text-align: center;\n  max-width: 440px;\n}\n.ticket-grid[_ngcontent-%COMP%] {\n  width: 100%;\n  display: grid;\n  grid-template-columns: 1fr 1fr;\n  gap: 16px;\n  margin-bottom: 24px;\n}\n.grid-item[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  text-align: center;\n}\n.ticket-field-label[_ngcontent-%COMP%] {\n  font-size: 10px;\n  text-transform: uppercase;\n  letter-spacing: 0.06em;\n  color: #64748b;\n  margin-bottom: 4px;\n  font-weight: 600;\n}\n.ticket-field-value[_ngcontent-%COMP%] {\n  font-size: 13px;\n  color: #0f172a;\n  font-weight: 600;\n}\n.total-paid[_ngcontent-%COMP%] {\n  color: #1a56db;\n  font-size: 15px;\n  font-weight: 700;\n}\n.stub-barcode-area[_ngcontent-%COMP%] {\n  width: 100%;\n  border-top: 1px solid #f1f5f9;\n  padding-top: 16px;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 6px;\n}\n.barcode-lines[_ngcontent-%COMP%] {\n  width: 220px;\n  height: 38px;\n  background:\n    repeating-linear-gradient(\n      90deg,\n      #0f172a 0px,\n      #0f172a 2px,\n      transparent 2px,\n      transparent 4px,\n      #0f172a 4px,\n      #0f172a 7px,\n      transparent 7px,\n      transparent 9px);\n  opacity: 0.85;\n}\n.barcode-code[_ngcontent-%COMP%] {\n  font-family: var(--font-mono, monospace);\n  font-size: 11px;\n  color: #64748b;\n  letter-spacing: 1.5px;\n}\n.barcode-sub[_ngcontent-%COMP%] {\n  font-size: 10px;\n  color: #94a3b8;\n}\n.bring-box[_ngcontent-%COMP%] {\n  width: 100%;\n  background: #fffbeb;\n  border: 1px solid #fde68a;\n  border-radius: 12px;\n  padding: 16px;\n  text-align: left;\n}\n.bring-title[_ngcontent-%COMP%] {\n  font-size: 13px;\n  font-weight: 700;\n  color: #92400e;\n  margin-bottom: 8px;\n  text-align: center;\n}\n.bring-list[_ngcontent-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  font-size: 12px;\n  color: #78350f;\n  line-height: 1.5;\n}\n.actions-wrapper[_ngcontent-%COMP%] {\n  width: 100%;\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n}\n.action-btn[_ngcontent-%COMP%] {\n  width: 100%;\n  padding: 12px;\n  font-size: 14px;\n  font-weight: 600;\n  border-radius: 8px;\n  justify-content: center;\n}\n@media print {\n  .nav[_ngcontent-%COMP%], \n   .actions-wrapper[_ngcontent-%COMP%], \n   .bring-box[_ngcontent-%COMP%] {\n    display: none !important;\n  }\n  .success-page[_ngcontent-%COMP%] {\n    padding: 0;\n    max-width: 100%;\n  }\n  .ticket-stub[_ngcontent-%COMP%] {\n    border: 2px solid #000000;\n    box-shadow: none;\n  }\n}\n/*# sourceMappingURL=success.css.map */"] });
 };
 (() => {
   (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(Success, [{
     type: Component,
-    args: [{ selector: "app-success", imports: [CommonModule], template: `<!-- Navigation -->\r
-<div class="nav">\r
-  <span class="nav-logo">\u{1F39F}\uFE0F EventHub</span>\r
-</div>\r
+    args: [{ selector: "app-success", standalone: true, imports: [CommonModule], template: `<!-- Navigation -->\r
+<nav class="nav">\r
+  <div class="nav-brand">\r
+    <span class="nav-logo">\u{1F39F}\uFE0F EventHub</span>\r
+    <!-- Dynamic Nav Badge based on Event Type -->\r
+    <span class="nav-fifa-pill" *ngIf="isSportsEvent()">OFFICIAL MATCH FIXTURE</span>\r
+    <span class="nav-fifa-pill" *ngIf="!isSportsEvent()">VERIFIED EVENT PASS</span>\r
+  </div>\r
+</nav>\r
 \r
 <!-- \u2500\u2500 VERIFYING STATE \u2500\u2500 -->\r
 <div *ngIf="pageState === 'verifying'" class="status-center">\r
   <div class="spinner"></div>\r
-  <div class="status-title">Confirming your payment\u2026</div>\r
-  <div class="status-sub">Please wait \u2014 this takes just a moment.</div>\r
+  <div class="status-title">Verifying Payment with Paystack\u2026</div>\r
+  <div class="status-sub">Please wait \u2014 confirming your order with the payment processor.</div>\r
 </div>\r
 \r
 <!-- \u2500\u2500 FAILURE STATE \u2500\u2500 -->\r
 <div *ngIf="pageState === 'failed'" class="status-center">\r
-  <div class="fail-icon">\u2717</div>\r
-  <div class="status-title">Payment cancelled</div>\r
+  <div class="fail-icon">\u2715</div>\r
+  <div class="status-title">Payment Verification Failed</div>\r
   <div class="status-sub">{{ errorMessage }}</div>\r
-  <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;justify-content:center">\r
-    <button class="btn btn-primary" (click)="tryAgain()">Try again</button>\r
-    <button class="btn btn-outline" (click)="browseMoreEvents()">\u2190 Back to events</button>\r
+  <div class="btn-group-centered mt-3">\r
+    <button class="btn btn-primary" (click)="tryAgain()">Return to Checkout</button>\r
+    <button class="btn btn-outline" (click)="browseMoreEvents()">Back to Events</button>\r
   </div>\r
 </div>\r
 \r
-<!-- \u2500\u2500 NO-DATA STATE (navigated directly without a reference) \u2500\u2500 -->\r
+<!-- \u2500\u2500 NO-DATA STATE \u2500\u2500 -->\r
 <div *ngIf="pageState === 'no-data'" class="status-center">\r
-  <div style="font-size:48px;margin-bottom:12px">\u{1F3AB}</div>\r
-  <div class="status-title">No payment reference found</div>\r
-  <div class="status-sub">Please complete checkout to see your ticket confirmation.</div>\r
+  <div style="font-size: 48px; margin-bottom: 12px">\u{1F3AB}</div>\r
+  <div class="status-title">No Active Payment Reference</div>\r
+  <div class="status-sub">Please select an event to proceed with your booking.</div>\r
   <button class="btn btn-primary mt-3" (click)="browseMoreEvents()">Browse Events</button>\r
 </div>\r
 \r
-<!-- \u2500\u2500 SUCCESS STATE \u2500\u2500 -->\r
+<!-- \u2500\u2500 SUCCESS STATE (Fully Dynamic Ticket Voucher) \u2500\u2500 -->\r
 <div *ngIf="pageState === 'success'" class="success-page">\r
 \r
-  <div class="success-icon">\u2705</div>\r
-\r
-  <div class="text-center mb-3">\r
-    <div class="success-heading">Payment confirmed!</div>\r
-    <div class="success-sub" *ngIf="booking?.customerInfo?.email">\r
-      Your e-ticket has been emailed to\r
+  <div class="success-badge-wrapper">\r
+    <div class="success-badge-icon">\u2713</div>\r
+    <h1 class="success-heading">Booking Confirmed!</h1>\r
+    <p class="success-sub" *ngIf="booking?.customerInfo?.email || booking?.customerEmail">\r
+      Your official e-ticket voucher has been sent to<br />\r
       <strong>{{ booking.customerInfo?.email || booking.customerEmail }}</strong>\r
-    </div>\r
-    <div class="success-sub" *ngIf="!booking?.customerInfo?.email">\r
-      Your e-ticket has been sent to your email address.\r
-    </div>\r
+    </p>\r
+    <p class="success-sub" *ngIf="!booking?.customerInfo?.email && !booking?.customerEmail">\r
+      Your booking has been secured successfully.\r
+    </p>\r
   </div>\r
 \r
-  <!-- Ticket Stub -->\r
-  <div class="ticket-stub mb-3">\r
-    <div class="ticket-label">Order number</div>\r
-    <div class="order-num">{{ orderNumber }}</div>\r
+  <!-- Dynamic Ticket Stub -->\r
+  <div class="ticket-stub">\r
+    <div class="stub-header">\r
+      <div class="stub-brand">\r
+        <!-- Dynamic Venue / Event Header Tag -->\r
+        <span class="stadium-tag">{{ (booking?.event?.venue || 'OFFICIAL EVENT PASS') | uppercase }}</span>\r
+        <span class="gate-tag" *ngIf="isSportsEvent()">STADIUM PASS</span>\r
+        <span class="gate-tag" *ngIf="!isSportsEvent()">E-TICKET</span>\r
+      </div>\r
+      <div class="stub-ref-group">\r
+        <span class="stub-ref-label">CONFIRMATION REF</span>\r
+        <span class="order-num">{{ orderNumber }}</span>\r
+      </div>\r
+    </div>\r
 \r
-    <div class="ticket-divider"></div>\r
+    <div class="stub-divider"></div>\r
 \r
-    <!-- With full event context -->\r
-    <ng-container *ngIf="booking && booking.event">\r
-      <div class="ticket-event-name">{{ booking.event.name }}</div>\r
+    <div class="stub-body">\r
+      <!-- Centered Dynamic Event Name -->\r
+      <div class="stub-match-title">\r
+        {{ getEventName() }}\r
+      </div>\r
+\r
+      <!-- Ticket Details Grid -->\r
       <div class="ticket-grid">\r
-        <div>\r
-          <div class="ticket-field-label">Date</div>\r
-          <div class="ticket-field-value">{{ formatEventDate(booking.event.event_date) }}</div>\r
+        <div class="grid-item">\r
+          <span class="ticket-field-label">Date & Time</span>\r
+          <span class="ticket-field-value">{{ formatEventDate(booking?.event?.event_date) }}</span>\r
         </div>\r
-        <div>\r
-          <div class="ticket-field-label">Tickets</div>\r
-          <div class="ticket-field-value">{{ booking.selectedTicketType | titlecase }} \xD7 {{ booking.quantity }}</div>\r
+\r
+        <div class="grid-item">\r
+          <span class="ticket-field-label">Ticket Type</span>\r
+          <span class="ticket-field-value">\r
+            {{ (booking?.selectedTicketType || 'Standard') | titlecase }} \xD7 {{ booking?.quantity || 1 }}\r
+          </span>\r
         </div>\r
-        <div>\r
-          <div class="ticket-field-label">Venue</div>\r
-          <div class="ticket-field-value">{{ booking.event.venue }}</div>\r
+\r
+        <div class="grid-item">\r
+          <span class="ticket-field-label">Venue</span>\r
+          <span class="ticket-field-value">{{ getEventVenue() }}</span>\r
         </div>\r
-        <div>\r
-          <div class="ticket-field-label">Total paid</div>\r
-          <div class="ticket-field-value total-paid">\r
+\r
+        <div class="grid-item">\r
+          <span class="ticket-field-label">Total Paid</span>\r
+          <span class="ticket-field-value total-paid">\r
             {{ currency }} {{ total.toFixed(2) }}\r
-          </div>\r
+          </span>\r
         </div>\r
       </div>\r
-    </ng-container>\r
 \r
-    <!-- Minimal fallback when context was lost (refresh scenario) -->\r
-    <ng-container *ngIf="!booking || !booking.event">\r
-      <div class="ticket-event-name">Your ticket is confirmed</div>\r
-      <div style="font-size:12px;color:var(--text-secondary);margin-top:6px">\r
-        Check your email for the full ticket details.\r
+      <!-- Turnstile / Gate Barcode Area -->\r
+      <div class="stub-barcode-area">\r
+        <div class="barcode-lines"></div>\r
+        <div class="barcode-code">{{ paymentReference || orderNumber }}</div>\r
+        <div class="barcode-sub">Present digital voucher or printed copy at the entrance check-in</div>\r
       </div>\r
-    </ng-container>\r
-  </div>\r
-\r
-  <!-- What to bring -->\r
-  <div class="bring-box mb-3">\r
-    <div class="bring-title">\u{1F4CB} What to bring</div>\r
-    <div class="bring-list">\r
-      <span>\u2022 This confirmation (digital or printed)</span>\r
-      <span>\u2022 Valid photo ID matching your name</span>\r
-      <span>\u2022 Arrive 30 minutes early</span>\r
     </div>\r
   </div>\r
 \r
-  <!-- Actions -->\r
-  <button class="btn btn-primary action-btn mb-2" (click)="browseMoreEvents()">\r
-    Browse more events\r
-  </button>\r
-  <button class="btn btn-outline action-btn" (click)="printPage()">\r
-    \u{1F5A8}\uFE0F Print this page\r
-  </button>\r
+  <!-- Dynamic Entry Guidelines -->\r
+  <div class="bring-box mb-3">\r
+    <div class="bring-title">\u{1F4CB} Entry Guidelines & What to Bring</div>\r
+    <div class="bring-list" *ngIf="isSportsEvent()">\r
+      <span>\u2022 Stadium gates open <strong>3 hours</strong> before kickoff. Arrive early to avoid congestion.</span>\r
+      <span>\u2022 Show this voucher on your phone or bring a printed copy.</span>\r
+      <span>\u2022 Valid photo ID matching your name required at security checkpoints.</span>\r
+      <span>\u2022 Large luggage, glass bottles, and prohibited stadium gear are not permitted.</span>\r
+    </div>\r
+    <div class="bring-list" *ngIf="!isSportsEvent()">\r
+      <span>\u2022 Please arrive at least <strong>30 minutes</strong> prior to the scheduled start time.</span>\r
+      <span>\u2022 Show this digital e-ticket or printed pass at the venue entrance.</span>\r
+      <span>\u2022 Valid photo ID may be requested at the check-in desk.</span>\r
+      <span>\u2022 Tickets are non-refundable as per the organizer cancellation terms.</span>\r
+    </div>\r
+  </div>\r
 \r
-</div>\r
-`, styles: ["/* src/app/success/success.css */\n.status-center {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  min-height: calc(100vh - 52px);\n  padding: 40px 24px;\n  text-align: center;\n}\n.status-title {\n  font-size: 18px;\n  font-weight: 500;\n  margin-bottom: 8px;\n  color: var(--text-primary);\n}\n.status-sub {\n  font-size: 13px;\n  color: var(--text-secondary);\n  max-width: 340px;\n  line-height: 1.6;\n}\n.spinner {\n  width: 40px;\n  height: 40px;\n  border: 3px solid var(--border);\n  border-top-color: #1a56db;\n  border-radius: 50%;\n  animation: spin 0.8s linear infinite;\n  margin-bottom: 20px;\n}\n@keyframes spin {\n  to {\n    transform: rotate(360deg);\n  }\n}\n.fail-icon {\n  width: 64px;\n  height: 64px;\n  border-radius: 50%;\n  background: #fee2e2;\n  color: #dc2626;\n  font-size: 28px;\n  font-weight: 700;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  margin-bottom: 16px;\n}\n.success-page {\n  padding: 40px 24px;\n  max-width: 480px;\n  margin: 0 auto;\n  display: flex;\n  flex-direction: column;\n  align-items: stretch;\n}\n.success-heading {\n  font-size: 20px;\n  font-weight: 600;\n  margin-bottom: 6px;\n  color: var(--text-primary);\n}\n.success-sub {\n  font-size: 13px;\n  color: var(--text-secondary);\n  line-height: 1.5;\n}\n.ticket-divider {\n  border-top: 1.5px dashed #1a56db;\n  margin: 14px 0;\n}\n.ticket-label {\n  font-size: 11px;\n  text-transform: uppercase;\n  letter-spacing: 0.1em;\n  color: #4b6cb7;\n  margin-bottom: 6px;\n}\n.ticket-event-name {\n  font-size: 14px;\n  font-weight: 600;\n  margin-bottom: 12px;\n  color: var(--text-primary);\n}\n.ticket-grid {\n  display: grid;\n  grid-template-columns: 1fr 1fr;\n  gap: 12px;\n}\n.ticket-field-label {\n  font-size: 10px;\n  text-transform: uppercase;\n  letter-spacing: 0.08em;\n  color: var(--text-muted);\n  margin-bottom: 3px;\n}\n.ticket-field-value {\n  font-size: 12px;\n  color: var(--text-secondary);\n  line-height: 1.4;\n}\n.total-paid {\n  font-weight: 600;\n  color: #1a56db !important;\n}\n.bring-box {\n  background: #fffbeb;\n  border: 0.5px solid #f59e0b;\n  border-radius: 10px;\n  padding: 14px;\n}\n.bring-title {\n  font-size: 12px;\n  font-weight: 600;\n  color: #92400e;\n  margin-bottom: 8px;\n}\n.bring-list {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  font-size: 12px;\n  color: #78350f;\n  line-height: 1.6;\n}\n.action-btn {\n  width: 100%;\n  justify-content: center;\n  padding: 12px;\n  font-size: 14px;\n}\n@media print {\n  .nav,\n  .action-btn {\n    display: none !important;\n  }\n  .success-page {\n    padding: 0;\n    max-width: 100%;\n  }\n  .bring-box {\n    border: 1px solid #f59e0b;\n  }\n}\n@media (max-width: 480px) {\n  .success-page {\n    padding: 24px 16px;\n  }\n  .ticket-grid {\n    grid-template-columns: 1fr;\n    gap: 8px;\n  }\n}\n/*# sourceMappingURL=success.css.map */\n"] }]
+  <!-- Action Buttons -->\r
+  <div class="actions-wrapper">\r
+    <button class="btn btn-outline action-btn" (click)="printPage()">\r
+      \u{1F5A8}\uFE0F Print Ticket Voucher\r
+    </button>\r
+    <button class="btn btn-primary action-btn" (click)="browseMoreEvents()">\r
+      Browse More Events\r
+    </button>\r
+  </div>\r
+</div>`, styles: ["/* src/app/success/success.css */\n.nav {\n  height: 56px;\n  background: #0f172a;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 0 24px;\n  border-bottom: 1px solid rgba(255, 255, 255, 0.1);\n}\n.nav-brand {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n}\n.nav-logo {\n  color: #ffffff;\n  font-size: 15px;\n  font-weight: 700;\n}\n.nav-fifa-pill {\n  background: rgba(26, 86, 219, 0.2);\n  border: 1px solid #1a56db;\n  color: #93c5fd;\n  font-size: 10px;\n  font-weight: 700;\n  padding: 3px 8px;\n  border-radius: 4px;\n  letter-spacing: 0.05em;\n}\n.status-center {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  min-height: calc(100vh - 120px);\n  padding: 40px 20px;\n  text-align: center;\n}\n.status-title {\n  font-size: 20px;\n  font-weight: 700;\n  margin-bottom: 8px;\n  color: #0f172a;\n  text-align: center;\n}\n.status-sub {\n  font-size: 14px;\n  color: #64748b;\n  max-width: 440px;\n  line-height: 1.6;\n  text-align: center;\n}\n.spinner {\n  width: 44px;\n  height: 44px;\n  border: 3.5px solid #e2e8f0;\n  border-top-color: #1a56db;\n  border-radius: 50%;\n  animation: spin 0.8s linear infinite;\n  margin-bottom: 20px;\n}\n@keyframes spin {\n  to {\n    transform: rotate(360deg);\n  }\n}\n.fail-icon {\n  width: 60px;\n  height: 60px;\n  border-radius: 50%;\n  background: #fee2e2;\n  color: #b91c1c;\n  font-size: 26px;\n  font-weight: 700;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  margin-bottom: 16px;\n}\n.btn-group-centered {\n  display: flex;\n  gap: 12px;\n  justify-content: center;\n  flex-wrap: wrap;\n}\n.success-page {\n  padding: 36px 20px 60px;\n  max-width: 540px;\n  margin: 0 auto;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  text-align: center;\n}\n.success-badge-wrapper {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  text-align: center;\n  margin-bottom: 24px;\n}\n.success-badge-icon {\n  width: 56px;\n  height: 56px;\n  border-radius: 50%;\n  background: #dcfce7;\n  color: #15803d;\n  font-size: 28px;\n  font-weight: 800;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  margin-bottom: 12px;\n  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);\n}\n.success-heading {\n  font-size: 24px;\n  font-weight: 800;\n  color: #0f172a;\n  margin-bottom: 6px;\n}\n.success-sub {\n  font-size: 13px;\n  color: #64748b;\n  line-height: 1.5;\n}\n.ticket-stub {\n  width: 100%;\n  background: #ffffff;\n  border: 1px solid #cbd5e1;\n  border-radius: 14px;\n  overflow: hidden;\n  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08);\n  margin-bottom: 20px;\n  text-align: center;\n}\n.stub-header {\n  background: #0f172a;\n  color: #ffffff;\n  padding: 16px 20px;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 8px;\n}\n.stub-brand {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-wrap: wrap;\n  justify-content: center;\n}\n.stadium-tag {\n  font-size: 10px;\n  font-weight: 800;\n  letter-spacing: 0.08em;\n  color: #93c5fd;\n}\n.gate-tag {\n  background: #1a56db;\n  color: #ffffff;\n  font-size: 9px;\n  font-weight: 700;\n  padding: 2px 6px;\n  border-radius: 4px;\n  letter-spacing: 0.06em;\n}\n.stub-ref-group {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 2px;\n}\n.stub-ref-label {\n  font-size: 9px;\n  letter-spacing: 0.1em;\n  color: #94a3b8;\n}\n.order-num {\n  font-family: var(--font-mono, monospace);\n  font-size: 18px;\n  font-weight: 700;\n  color: #38bdf8;\n  letter-spacing: 2px;\n}\n.stub-divider {\n  border-top: 2px dashed #e2e8f0;\n  position: relative;\n  margin: 0;\n}\n.stub-body {\n  padding: 24px 20px;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n}\n.stub-match-title {\n  font-size: 16px;\n  font-weight: 700;\n  color: #0f172a;\n  line-height: 1.4;\n  margin-bottom: 20px;\n  text-align: center;\n  max-width: 440px;\n}\n.ticket-grid {\n  width: 100%;\n  display: grid;\n  grid-template-columns: 1fr 1fr;\n  gap: 16px;\n  margin-bottom: 24px;\n}\n.grid-item {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  text-align: center;\n}\n.ticket-field-label {\n  font-size: 10px;\n  text-transform: uppercase;\n  letter-spacing: 0.06em;\n  color: #64748b;\n  margin-bottom: 4px;\n  font-weight: 600;\n}\n.ticket-field-value {\n  font-size: 13px;\n  color: #0f172a;\n  font-weight: 600;\n}\n.total-paid {\n  color: #1a56db;\n  font-size: 15px;\n  font-weight: 700;\n}\n.stub-barcode-area {\n  width: 100%;\n  border-top: 1px solid #f1f5f9;\n  padding-top: 16px;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 6px;\n}\n.barcode-lines {\n  width: 220px;\n  height: 38px;\n  background:\n    repeating-linear-gradient(\n      90deg,\n      #0f172a 0px,\n      #0f172a 2px,\n      transparent 2px,\n      transparent 4px,\n      #0f172a 4px,\n      #0f172a 7px,\n      transparent 7px,\n      transparent 9px);\n  opacity: 0.85;\n}\n.barcode-code {\n  font-family: var(--font-mono, monospace);\n  font-size: 11px;\n  color: #64748b;\n  letter-spacing: 1.5px;\n}\n.barcode-sub {\n  font-size: 10px;\n  color: #94a3b8;\n}\n.bring-box {\n  width: 100%;\n  background: #fffbeb;\n  border: 1px solid #fde68a;\n  border-radius: 12px;\n  padding: 16px;\n  text-align: left;\n}\n.bring-title {\n  font-size: 13px;\n  font-weight: 700;\n  color: #92400e;\n  margin-bottom: 8px;\n  text-align: center;\n}\n.bring-list {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  font-size: 12px;\n  color: #78350f;\n  line-height: 1.5;\n}\n.actions-wrapper {\n  width: 100%;\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n}\n.action-btn {\n  width: 100%;\n  padding: 12px;\n  font-size: 14px;\n  font-weight: 600;\n  border-radius: 8px;\n  justify-content: center;\n}\n@media print {\n  .nav,\n  .actions-wrapper,\n  .bring-box {\n    display: none !important;\n  }\n  .success-page {\n    padding: 0;\n    max-width: 100%;\n  }\n  .ticket-stub {\n    border: 2px solid #000000;\n    box-shadow: none;\n  }\n}\n/*# sourceMappingURL=success.css.map */\n"] }]
   }], () => [{ type: Router }, { type: ActivatedRoute }, { type: BookingService }, { type: Object, decorators: [{
     type: Inject,
     args: [PLATFORM_ID]

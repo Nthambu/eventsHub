@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { BookingService } from '../services/booking.service';
@@ -7,6 +7,7 @@ import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-landing-page',
+  standalone: true,
   imports: [CommonModule],
   templateUrl: './landing-page.html',
   styleUrl: './landing-page.css',
@@ -23,9 +24,8 @@ export class LandingPage implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Serve from cache instantly on back-navigation; avoids loading flash
     const cached = this.bookingService.getCachedEvents();
-    if (cached) {
+    if (cached && cached.length > 0) {
       this.events = cached;
       return;
     }
@@ -51,6 +51,11 @@ export class LandingPage implements OnInit {
     });
   }
 
+  isMatchEvent(event: EventData): boolean {
+    const text = (event.name + ' ' + (event.venue || '')).toLowerCase();
+    return text.includes('bayern') || text.includes('ajax') || text.includes('talanta') || text.includes('vs');
+  }
+
   formatEventDate(dateString: string): string {
     const date = new Date(dateString);
     const options: Intl.DateTimeFormatOptions = {
@@ -66,17 +71,15 @@ export class LandingPage implements OnInit {
 
   getEventGradient(index: number): string {
     const gradients = [
-      'linear-gradient(135deg,#1a56db22,#1a56db44)',
-      'linear-gradient(135deg,#7c3aed22,#7c3aed44)',
-      'linear-gradient(135deg,#dc262622,#dc262644)',
-      'linear-gradient(135deg,#05966944,#05966966)',
-      'linear-gradient(135deg,#d9770644,#d9770666)',
+      'linear-gradient(135deg,#0f172a,#1e3a8a)',
+      'linear-gradient(135deg,#1e1b4b,#312e81)',
+      'linear-gradient(135deg,#1e293b,#0f172a)',
     ];
     return gradients[index % gradients.length];
   }
 
   getEventEmoji(index: number): string {
-    const emojis = ['🎵', '🎤', '🎉', '🎭', '🎸', '🎪', '🎨', '🎬'];
+    const emojis = ['⚽', '🏟️', '🎟️', '🏆'];
     return emojis[index % emojis.length];
   }
 
