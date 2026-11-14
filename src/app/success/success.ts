@@ -106,7 +106,7 @@ export class Success implements OnInit, OnDestroy {
         }
         this.pageState = 'success';
         this.toastr.success('Your official e-ticket voucher has been emailed');
-        this.router.navigate(['/']);
+       // this.router.navigate(['/']);
       },
       error: (err) => {
         this.errorMessage =
