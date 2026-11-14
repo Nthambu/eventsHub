@@ -75617,8 +75617,8 @@ var NoopAnimationsModule = class _NoopAnimationsModule {
 // src/environments/environment.ts
 var environment = {
   production: false,
-  baseUrl: "http://localhost:3000"
-  //baseUrl: 'https://madfuns-backend.onrender.com'
+  //baseUrl: 'http://localhost:3000'
+  baseUrl: "https://madfuns-backend.onrender.com"
 };
 
 // node_modules/@angular/animations/fesm2022/animations.mjs
@@ -77685,7 +77685,7 @@ var LandingPage = class _LandingPage {
       \u0275\u0275advance();
       \u0275\u0275property("ngIf", !ctx.loading && ctx.events.length > 0);
       \u0275\u0275advance(3);
-      \u0275\u0275textInterpolate1("\xA9 ", ctx.currentYear, " EventHub Ticketing \xB7 Talanta Stadium International Showcase");
+      \u0275\u0275textInterpolate1("\xA9 ", ctx.currentYear, " Madfuns Ticketing \xB7 Talanta Stadium International Showcase");
     }
   }, dependencies: [CommonModule, NgForOf, NgIf], styles: ["\n\n.nav[_ngcontent-%COMP%] {\n  height: 60px;\n  background: #111827;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 0 28px;\n  border-bottom: 1px solid rgba(255, 255, 255, 0.1);\n}\n.nav-brand[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  gap: 14px;\n}\n.nav-logo[_ngcontent-%COMP%] {\n  color: #ffffff;\n  font-size: 16px;\n  font-weight: 700;\n  letter-spacing: -0.01em;\n}\n.nav-badge-fifa[_ngcontent-%COMP%] {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  background: rgba(26, 86, 219, 0.18);\n  border: 1px solid #1a56db;\n  color: #93c5fd;\n  padding: 3px 10px;\n  border-radius: 6px;\n  font-size: 10px;\n  font-weight: 700;\n  letter-spacing: 0.08em;\n}\n.fifa-svg[_ngcontent-%COMP%] {\n  width: 44px;\n  height: 16px;\n  fill: #60a5fa;\n}\n.lp-hero[_ngcontent-%COMP%] {\n  padding: 36px 20px 32px;\n  text-align: center;\n  background:\n    linear-gradient(\n      180deg,\n      #f8fafc 0%,\n      #ffffff 100%);\n  border-bottom: 1px solid var(--border);\n  overflow: hidden;\n}\n.hero-strip-wrapper[_ngcontent-%COMP%] {\n  width: 100%;\n  overflow: hidden;\n  margin-bottom: 24px;\n  -webkit-mask-image:\n    linear-gradient(\n      to right,\n      transparent 0%,\n      black 8%,\n      black 92%,\n      transparent 100%);\n  mask-image:\n    linear-gradient(\n      to right,\n      transparent 0%,\n      black 8%,\n      black 92%,\n      transparent 100%);\n}\n.hero-strip[_ngcontent-%COMP%] {\n  display: flex;\n  gap: 10px;\n  width: max-content;\n  animation: _ngcontent-%COMP%_strip-scroll 10s linear infinite;\n}\n.hero-strip[_ngcontent-%COMP%]:hover {\n  animation-play-state: paused;\n}\n@keyframes _ngcontent-%COMP%_strip-scroll {\n  0% {\n    transform: translateX(0);\n  }\n  100% {\n    transform: translateX(-50%);\n  }\n}\n.strip-tile[_ngcontent-%COMP%] {\n  width: 100px;\n  height: 64px;\n  border-radius: 10px;\n  overflow: hidden;\n  flex-shrink: 0;\n  position: relative;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);\n}\n.strip-tile-img[_ngcontent-%COMP%] {\n  position: absolute;\n  inset: 0;\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n  z-index: 1;\n  border-radius: 10px;\n}\n.strip-tile-emoji[_ngcontent-%COMP%] {\n  font-size: 24px;\n  z-index: 0;\n  opacity: 0.6;\n}\n.lp-hero-title[_ngcontent-%COMP%] {\n  font-size: 32px;\n  font-weight: 800;\n  color: #0f172a;\n  margin-bottom: 10px;\n  letter-spacing: -0.03em;\n  text-align: center;\n}\n.lp-hero-sub[_ngcontent-%COMP%] {\n  font-size: 15px;\n  color: #64748b;\n  max-width: 620px;\n  margin: 0 auto;\n  text-align: center;\n}\n.lp-grid[_ngcontent-%COMP%] {\n  display: grid;\n  grid-template-columns: repeat(3, 1fr);\n  gap: 24px;\n  align-items: stretch;\n  padding: 36px 32px 56px;\n  max-width: 1280px;\n  margin: 0 auto;\n}\n.event-card[_ngcontent-%COMP%] {\n  height: 100%;\n  display: flex;\n  flex-direction: column;\n  background: #ffffff;\n  border: 1px solid #e2e8f0;\n  border-radius: 16px;\n  overflow: hidden;\n  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);\n  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;\n  cursor: pointer;\n}\n.event-card[_ngcontent-%COMP%]:hover {\n  transform: translateY(-4px);\n  box-shadow: 0 16px 32px -8px rgba(15, 23, 42, 0.16);\n  border-color: #cbd5e1;\n}\n.ecard-img[_ngcontent-%COMP%] {\n  width: 100%;\n  height: 230px;\n  min-height: 230px;\n  position: relative;\n  overflow: hidden;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  background: #0f172a;\n}\n.ecard-img-photo[_ngcontent-%COMP%] {\n  position: absolute;\n  inset: 0;\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n  z-index: 1;\n}\n.ecard-emoji[_ngcontent-%COMP%] {\n  font-size: 44px;\n  z-index: 0;\n}\n.fifa-event-pill[_ngcontent-%COMP%] {\n  position: absolute;\n  top: 12px;\n  left: 12px;\n  z-index: 2;\n  background: rgba(15, 23, 42, 0.85);\n  -webkit-backdrop-filter: blur(6px);\n  backdrop-filter: blur(6px);\n  color: #f8fafc;\n  font-size: 11px;\n  font-weight: 700;\n  padding: 4px 10px;\n  border-radius: 6px;\n  border: 1px solid rgba(255, 255, 255, 0.2);\n  letter-spacing: 0.02em;\n}\n.ecard-body[_ngcontent-%COMP%] {\n  flex: 1 1 auto;\n  display: flex;\n  flex-direction: column;\n  justify-content: space-between;\n  align-items: center;\n  text-align: center;\n  padding: 20px;\n  gap: 16px;\n}\n.ecard-header-group[_ngcontent-%COMP%] {\n  width: 100%;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  text-align: center;\n}\n.ecard-title[_ngcontent-%COMP%] {\n  font-size: 16px;\n  font-weight: 700;\n  color: #0f172a;\n  line-height: 1.4;\n  margin-bottom: 8px;\n  text-align: center;\n  display: -webkit-box;\n  -webkit-line-clamp: 2;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  min-height: 44px;\n}\n.ecard-meta[_ngcontent-%COMP%] {\n  width: 100%;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 4px;\n  font-size: 12px;\n  color: #64748b;\n  text-align: center;\n}\n.meta-item[_ngcontent-%COMP%] {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  text-align: center;\n}\n.ecard-tags-wrapper[_ngcontent-%COMP%] {\n  width: auto;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  min-height: 48px;\n}\n.ecard-tags[_ngcontent-%COMP%] {\n  display: flex;\n  flex-wrap: wrap;\n  justify-content: center;\n  align-items: center;\n  gap: 6px;\n}\n.tag-blue[_ngcontent-%COMP%] {\n  background: #eff6ff;\n  color: #000000;\n  border: 1px solid #dbeafe;\n  font-weight: 600;\n  font-size: 11px;\n  padding: 4px 10px;\n  border-radius: 20px;\n}\n.ecard-action[_ngcontent-%COMP%] {\n  width: 100%;\n  margin-top: auto;\n}\n.ecard-btn[_ngcontent-%COMP%] {\n  width: 100%;\n  justify-content: center;\n  font-size: 14px;\n  font-weight: 600;\n  padding: 10px;\n  border-radius: 10px;\n  background: #1a56db;\n}\n.ecard-btn[_ngcontent-%COMP%]:hover {\n  background: #1e40af;\n}\n.lp-footer[_ngcontent-%COMP%] {\n  text-align: center;\n  padding: 24px;\n  font-size: 12px;\n  color: #64748b;\n  border-top: 1px solid #e2e8f0;\n  background: #ffffff;\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n}\n.lp-footer-sub[_ngcontent-%COMP%] {\n  font-size: 11px;\n  color: #94a3b8;\n}\n@media (max-width: 1024px) {\n  .lp-grid[_ngcontent-%COMP%] {\n    grid-template-columns: repeat(2, 1fr);\n  }\n}\n@media (max-width: 640px) {\n  .lp-grid[_ngcontent-%COMP%] {\n    grid-template-columns: 1fr;\n    padding: 20px 16px 40px;\n  }\n  .lp-hero-title[_ngcontent-%COMP%] {\n    font-size: 24px;\n  }\n}\n/*# sourceMappingURL=landing-page.css.map */"] });
 };
@@ -77814,7 +77814,7 @@ var LandingPage = class _LandingPage {
 \r
 <!-- Footer -->\r
 <footer class="lp-footer">\r
-  <div>\xA9 {{ currentYear }} EventHub Ticketing \xB7 Talanta Stadium International Showcase</div>\r
+  <div>\xA9 {{ currentYear }} Madfuns Ticketing \xB7 Talanta Stadium International Showcase</div>\r
   <div class="lp-footer-sub">\u{1F6E1}\uFE0F PCI DSS Level 1 Certified Payments via Paystack</div>\r
 </footer>`, styles: ["/* src/app/landing-page/landing-page.css */\n.nav {\n  height: 60px;\n  background: #111827;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 0 28px;\n  border-bottom: 1px solid rgba(255, 255, 255, 0.1);\n}\n.nav-brand {\n  display: flex;\n  align-items: center;\n  gap: 14px;\n}\n.nav-logo {\n  color: #ffffff;\n  font-size: 16px;\n  font-weight: 700;\n  letter-spacing: -0.01em;\n}\n.nav-badge-fifa {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  background: rgba(26, 86, 219, 0.18);\n  border: 1px solid #1a56db;\n  color: #93c5fd;\n  padding: 3px 10px;\n  border-radius: 6px;\n  font-size: 10px;\n  font-weight: 700;\n  letter-spacing: 0.08em;\n}\n.fifa-svg {\n  width: 44px;\n  height: 16px;\n  fill: #60a5fa;\n}\n.lp-hero {\n  padding: 36px 20px 32px;\n  text-align: center;\n  background:\n    linear-gradient(\n      180deg,\n      #f8fafc 0%,\n      #ffffff 100%);\n  border-bottom: 1px solid var(--border);\n  overflow: hidden;\n}\n.hero-strip-wrapper {\n  width: 100%;\n  overflow: hidden;\n  margin-bottom: 24px;\n  -webkit-mask-image:\n    linear-gradient(\n      to right,\n      transparent 0%,\n      black 8%,\n      black 92%,\n      transparent 100%);\n  mask-image:\n    linear-gradient(\n      to right,\n      transparent 0%,\n      black 8%,\n      black 92%,\n      transparent 100%);\n}\n.hero-strip {\n  display: flex;\n  gap: 10px;\n  width: max-content;\n  animation: strip-scroll 10s linear infinite;\n}\n.hero-strip:hover {\n  animation-play-state: paused;\n}\n@keyframes strip-scroll {\n  0% {\n    transform: translateX(0);\n  }\n  100% {\n    transform: translateX(-50%);\n  }\n}\n.strip-tile {\n  width: 100px;\n  height: 64px;\n  border-radius: 10px;\n  overflow: hidden;\n  flex-shrink: 0;\n  position: relative;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);\n}\n.strip-tile-img {\n  position: absolute;\n  inset: 0;\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n  z-index: 1;\n  border-radius: 10px;\n}\n.strip-tile-emoji {\n  font-size: 24px;\n  z-index: 0;\n  opacity: 0.6;\n}\n.lp-hero-title {\n  font-size: 32px;\n  font-weight: 800;\n  color: #0f172a;\n  margin-bottom: 10px;\n  letter-spacing: -0.03em;\n  text-align: center;\n}\n.lp-hero-sub {\n  font-size: 15px;\n  color: #64748b;\n  max-width: 620px;\n  margin: 0 auto;\n  text-align: center;\n}\n.lp-grid {\n  display: grid;\n  grid-template-columns: repeat(3, 1fr);\n  gap: 24px;\n  align-items: stretch;\n  padding: 36px 32px 56px;\n  max-width: 1280px;\n  margin: 0 auto;\n}\n.event-card {\n  height: 100%;\n  display: flex;\n  flex-direction: column;\n  background: #ffffff;\n  border: 1px solid #e2e8f0;\n  border-radius: 16px;\n  overflow: hidden;\n  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);\n  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;\n  cursor: pointer;\n}\n.event-card:hover {\n  transform: translateY(-4px);\n  box-shadow: 0 16px 32px -8px rgba(15, 23, 42, 0.16);\n  border-color: #cbd5e1;\n}\n.ecard-img {\n  width: 100%;\n  height: 230px;\n  min-height: 230px;\n  position: relative;\n  overflow: hidden;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  background: #0f172a;\n}\n.ecard-img-photo {\n  position: absolute;\n  inset: 0;\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n  z-index: 1;\n}\n.ecard-emoji {\n  font-size: 44px;\n  z-index: 0;\n}\n.fifa-event-pill {\n  position: absolute;\n  top: 12px;\n  left: 12px;\n  z-index: 2;\n  background: rgba(15, 23, 42, 0.85);\n  -webkit-backdrop-filter: blur(6px);\n  backdrop-filter: blur(6px);\n  color: #f8fafc;\n  font-size: 11px;\n  font-weight: 700;\n  padding: 4px 10px;\n  border-radius: 6px;\n  border: 1px solid rgba(255, 255, 255, 0.2);\n  letter-spacing: 0.02em;\n}\n.ecard-body {\n  flex: 1 1 auto;\n  display: flex;\n  flex-direction: column;\n  justify-content: space-between;\n  align-items: center;\n  text-align: center;\n  padding: 20px;\n  gap: 16px;\n}\n.ecard-header-group {\n  width: 100%;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  text-align: center;\n}\n.ecard-title {\n  font-size: 16px;\n  font-weight: 700;\n  color: #0f172a;\n  line-height: 1.4;\n  margin-bottom: 8px;\n  text-align: center;\n  display: -webkit-box;\n  -webkit-line-clamp: 2;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  min-height: 44px;\n}\n.ecard-meta {\n  width: 100%;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 4px;\n  font-size: 12px;\n  color: #64748b;\n  text-align: center;\n}\n.meta-item {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  text-align: center;\n}\n.ecard-tags-wrapper {\n  width: auto;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  min-height: 48px;\n}\n.ecard-tags {\n  display: flex;\n  flex-wrap: wrap;\n  justify-content: center;\n  align-items: center;\n  gap: 6px;\n}\n.tag-blue {\n  background: #eff6ff;\n  color: #000000;\n  border: 1px solid #dbeafe;\n  font-weight: 600;\n  font-size: 11px;\n  padding: 4px 10px;\n  border-radius: 20px;\n}\n.ecard-action {\n  width: 100%;\n  margin-top: auto;\n}\n.ecard-btn {\n  width: 100%;\n  justify-content: center;\n  font-size: 14px;\n  font-weight: 600;\n  padding: 10px;\n  border-radius: 10px;\n  background: #1a56db;\n}\n.ecard-btn:hover {\n  background: #1e40af;\n}\n.lp-footer {\n  text-align: center;\n  padding: 24px;\n  font-size: 12px;\n  color: #64748b;\n  border-top: 1px solid #e2e8f0;\n  background: #ffffff;\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n}\n.lp-footer-sub {\n  font-size: 11px;\n  color: #94a3b8;\n}\n@media (max-width: 1024px) {\n  .lp-grid {\n    grid-template-columns: repeat(2, 1fr);\n  }\n}\n@media (max-width: 640px) {\n  .lp-grid {\n    grid-template-columns: 1fr;\n    padding: 20px 16px 40px;\n  }\n  .lp-hero-title {\n    font-size: 24px;\n  }\n}\n/*# sourceMappingURL=landing-page.css.map */\n"] }]
   }], () => [{ type: BookingService }, { type: Router }, { type: ToastrService }], null);
@@ -85565,7 +85565,7 @@ var Checkout = class _Checkout {
           }
         }
       }
-      this.pageshowHandler = (event) => {
+      this.pageshowHandler = () => {
         this.isProcessing = false;
       };
       window.addEventListener("pageshow", this.pageshowHandler);
@@ -85653,38 +85653,35 @@ var Checkout = class _Checkout {
     this.bookingService.initializePayment(paymentRequest).subscribe({
       next: (response) => {
         this.paymentBreakdown = response.breakdown;
-        const finalCtx = __spreadProps(__spreadValues({}, updatedData), {
+        this.bookingService.updateCheckoutData(__spreadProps(__spreadValues({}, updatedData), {
           total: response.breakdown.total,
           currency: response.breakdown.currency,
           breakdown: response.breakdown
-        });
-        this.bookingService.updateCheckoutData(finalCtx);
+        }));
         if (isPlatformBrowser(this.platformId)) {
           localStorage.setItem("paymentReference", response.reference);
           const PaystackPop = window.PaystackPop;
-          if (!PaystackPop) {
+          if (PaystackPop) {
+            const handler = PaystackPop.setup({
+              access_code: response.accessCode,
+              onSuccess: () => {
+                this.router.navigate(["/success"], {
+                  queryParams: { ref: response.reference }
+                });
+              },
+              onClose: () => {
+                this.isProcessing = false;
+                localStorage.removeItem("paymentReference");
+                this.toastr.info("Payment cancelled. Your details are saved \u2014 try again when ready.");
+              }
+            });
+            handler.openIframe();
+          } else {
             window.location.href = response.authorizationUrl;
-            return;
-          }
-          const handler = PaystackPop.setup({
-            key: "",
-            // not needed when using accessCode
-            access_code: response.accessCode,
-            onSuccess: (transaction) => {
-              this.router.navigate(["/success"], {
-                queryParams: { ref: response.reference }
-              });
-            },
-            onCancel: () => {
+            setTimeout(() => {
               this.isProcessing = false;
-              localStorage.removeItem("paymentReference");
-              this.router.navigate(["/"]);
-            }
-          });
-          handler.openIframe();
-          setTimeout(() => {
-            this.isProcessing = false;
-          }, 1e4);
+            }, 8e3);
+          }
         }
       },
       error: (err) => {
@@ -86193,19 +86190,21 @@ var Success = class _Success {
   router;
   route;
   bookingService;
+  toastr;
   platformId;
   pageState = "verifying";
   errorMessage = "";
   orderNumber = "";
   total = 0;
-  currency = "USD";
+  currency = "KES";
   booking = null;
   paymentReference = "";
   sub;
-  constructor(router, route, bookingService, platformId) {
+  constructor(router, route, bookingService, toastr, platformId) {
     this.router = router;
     this.route = route;
     this.bookingService = bookingService;
+    this.toastr = toastr;
     this.platformId = platformId;
   }
   ngOnInit() {
@@ -86229,7 +86228,7 @@ var Success = class _Success {
     }
     this.booking = ctx && ctx.event ? ctx : null;
     this.total = ctx?.total ?? 0;
-    this.currency = ctx?.breakdown?.currency ?? ctx?.currency ?? "USD";
+    this.currency = ctx?.breakdown?.currency ?? ctx?.currency ?? "KES";
     this.verifyPayment(ref);
   }
   ngOnDestroy() {
@@ -86262,6 +86261,8 @@ var Success = class _Success {
           localStorage.removeItem("activeCheckoutData");
         }
         this.pageState = "success";
+        this.toastr.success("Your official e-ticket voucher has been emailed");
+        this.router.navigate(["/"]);
       },
       error: (err) => {
         this.errorMessage = err?.error?.message ?? err?.message ?? "Payment verification failed. Please contact support.";
@@ -86315,7 +86316,7 @@ var Success = class _Success {
     }
   }
   static \u0275fac = function Success_Factory(__ngFactoryType__) {
-    return new (__ngFactoryType__ || _Success)(\u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(BookingService), \u0275\u0275directiveInject(PLATFORM_ID));
+    return new (__ngFactoryType__ || _Success)(\u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(BookingService), \u0275\u0275directiveInject(ToastrService), \u0275\u0275directiveInject(PLATFORM_ID));
   };
   static \u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _Success, selectors: [["app-success"]], decls: 10, vars: 6, consts: [[1, "nav"], [1, "nav-brand"], [1, "nav-logo"], ["class", "nav-fifa-pill", 4, "ngIf"], ["class", "status-center", 4, "ngIf"], ["class", "success-page", 4, "ngIf"], [1, "nav-fifa-pill"], [1, "status-center"], [1, "spinner"], [1, "status-title"], [1, "status-sub"], [1, "fail-icon"], [1, "btn-group-centered", "mt-3"], [1, "btn", "btn-primary", 3, "click"], [1, "btn", "btn-outline", 3, "click"], [2, "font-size", "48px", "margin-bottom", "12px"], [1, "btn", "btn-primary", "mt-3", 3, "click"], [1, "success-page"], [1, "success-badge-wrapper"], [1, "success-badge-icon"], [1, "success-heading"], ["class", "success-sub", 4, "ngIf"], [1, "ticket-stub"], [1, "stub-header"], [1, "stub-brand"], [1, "stadium-tag"], ["class", "gate-tag", 4, "ngIf"], [1, "stub-ref-group"], [1, "stub-ref-label"], [1, "order-num"], [1, "stub-divider"], [1, "stub-body"], [1, "stub-match-title"], [1, "ticket-grid"], [1, "grid-item"], [1, "ticket-field-label"], [1, "ticket-field-value"], [1, "ticket-field-value", "total-paid"], [1, "stub-barcode-area"], [1, "barcode-lines"], [1, "barcode-code"], [1, "barcode-sub"], [1, "bring-box", "mb-3"], [1, "bring-title"], ["class", "bring-list", 4, "ngIf"], [1, "actions-wrapper"], [1, "btn", "btn-outline", "action-btn", 3, "click"], [1, "btn", "btn-primary", "action-btn", 3, "click"], [1, "success-sub"], [1, "gate-tag"], [1, "bring-list"]], template: function Success_Template(rf, ctx) {
     if (rf & 1) {
@@ -86482,13 +86483,13 @@ var Success = class _Success {
     </button>\r
   </div>\r
 </div>`, styles: ["/* src/app/success/success.css */\n.nav {\n  height: 56px;\n  background: #0f172a;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 0 24px;\n  border-bottom: 1px solid rgba(255, 255, 255, 0.1);\n}\n.nav-brand {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n}\n.nav-logo {\n  color: #ffffff;\n  font-size: 15px;\n  font-weight: 700;\n}\n.nav-fifa-pill {\n  background: rgba(26, 86, 219, 0.2);\n  border: 1px solid #1a56db;\n  color: #93c5fd;\n  font-size: 10px;\n  font-weight: 700;\n  padding: 3px 8px;\n  border-radius: 4px;\n  letter-spacing: 0.05em;\n}\n.status-center {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  min-height: calc(100vh - 120px);\n  padding: 40px 20px;\n  text-align: center;\n}\n.status-title {\n  font-size: 20px;\n  font-weight: 700;\n  margin-bottom: 8px;\n  color: #0f172a;\n  text-align: center;\n}\n.status-sub {\n  font-size: 14px;\n  color: #64748b;\n  max-width: 440px;\n  line-height: 1.6;\n  text-align: center;\n}\n.spinner {\n  width: 44px;\n  height: 44px;\n  border: 3.5px solid #e2e8f0;\n  border-top-color: #1a56db;\n  border-radius: 50%;\n  animation: spin 0.8s linear infinite;\n  margin-bottom: 20px;\n}\n@keyframes spin {\n  to {\n    transform: rotate(360deg);\n  }\n}\n.fail-icon {\n  width: 60px;\n  height: 60px;\n  border-radius: 50%;\n  background: #fee2e2;\n  color: #b91c1c;\n  font-size: 26px;\n  font-weight: 700;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  margin-bottom: 16px;\n}\n.btn-group-centered {\n  display: flex;\n  gap: 12px;\n  justify-content: center;\n  flex-wrap: wrap;\n}\n.success-page {\n  padding: 36px 20px 60px;\n  max-width: 540px;\n  margin: 0 auto;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  text-align: center;\n}\n.success-badge-wrapper {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  text-align: center;\n  margin-bottom: 24px;\n}\n.success-badge-icon {\n  width: 56px;\n  height: 56px;\n  border-radius: 50%;\n  background: #dcfce7;\n  color: #15803d;\n  font-size: 28px;\n  font-weight: 800;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  margin-bottom: 12px;\n  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);\n}\n.success-heading {\n  font-size: 24px;\n  font-weight: 800;\n  color: #0f172a;\n  margin-bottom: 6px;\n}\n.success-sub {\n  font-size: 13px;\n  color: #64748b;\n  line-height: 1.5;\n}\n.ticket-stub {\n  width: 100%;\n  background: #ffffff;\n  border: 1px solid #cbd5e1;\n  border-radius: 14px;\n  overflow: hidden;\n  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08);\n  margin-bottom: 20px;\n  text-align: center;\n}\n.stub-header {\n  background: #0f172a;\n  color: #ffffff;\n  padding: 16px 20px;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 8px;\n}\n.stub-brand {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-wrap: wrap;\n  justify-content: center;\n}\n.stadium-tag {\n  font-size: 10px;\n  font-weight: 800;\n  letter-spacing: 0.08em;\n  color: #93c5fd;\n}\n.gate-tag {\n  background: #1a56db;\n  color: #ffffff;\n  font-size: 9px;\n  font-weight: 700;\n  padding: 2px 6px;\n  border-radius: 4px;\n  letter-spacing: 0.06em;\n}\n.stub-ref-group {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 2px;\n}\n.stub-ref-label {\n  font-size: 9px;\n  letter-spacing: 0.1em;\n  color: #94a3b8;\n}\n.order-num {\n  font-family: var(--font-mono, monospace);\n  font-size: 18px;\n  font-weight: 700;\n  color: #38bdf8;\n  letter-spacing: 2px;\n}\n.stub-divider {\n  border-top: 2px dashed #e2e8f0;\n  position: relative;\n  margin: 0;\n}\n.stub-body {\n  padding: 24px 20px;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n}\n.stub-match-title {\n  font-size: 16px;\n  font-weight: 700;\n  color: #0f172a;\n  line-height: 1.4;\n  margin-bottom: 20px;\n  text-align: center;\n  max-width: 440px;\n}\n.ticket-grid {\n  width: 100%;\n  display: grid;\n  grid-template-columns: 1fr 1fr;\n  gap: 16px;\n  margin-bottom: 24px;\n}\n.grid-item {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  text-align: center;\n}\n.ticket-field-label {\n  font-size: 10px;\n  text-transform: uppercase;\n  letter-spacing: 0.06em;\n  color: #64748b;\n  margin-bottom: 4px;\n  font-weight: 600;\n}\n.ticket-field-value {\n  font-size: 13px;\n  color: #0f172a;\n  font-weight: 600;\n}\n.total-paid {\n  color: #1a56db;\n  font-size: 15px;\n  font-weight: 700;\n}\n.stub-barcode-area {\n  width: 100%;\n  border-top: 1px solid #f1f5f9;\n  padding-top: 16px;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 6px;\n}\n.barcode-lines {\n  width: 220px;\n  height: 38px;\n  background:\n    repeating-linear-gradient(\n      90deg,\n      #0f172a 0px,\n      #0f172a 2px,\n      transparent 2px,\n      transparent 4px,\n      #0f172a 4px,\n      #0f172a 7px,\n      transparent 7px,\n      transparent 9px);\n  opacity: 0.85;\n}\n.barcode-code {\n  font-family: var(--font-mono, monospace);\n  font-size: 11px;\n  color: #64748b;\n  letter-spacing: 1.5px;\n}\n.barcode-sub {\n  font-size: 10px;\n  color: #94a3b8;\n}\n.bring-box {\n  width: 100%;\n  background: #fffbeb;\n  border: 1px solid #fde68a;\n  border-radius: 12px;\n  padding: 16px;\n  text-align: left;\n}\n.bring-title {\n  font-size: 13px;\n  font-weight: 700;\n  color: #92400e;\n  margin-bottom: 8px;\n  text-align: center;\n}\n.bring-list {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  font-size: 12px;\n  color: #78350f;\n  line-height: 1.5;\n}\n.actions-wrapper {\n  width: 100%;\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n}\n.action-btn {\n  width: 100%;\n  padding: 12px;\n  font-size: 14px;\n  font-weight: 600;\n  border-radius: 8px;\n  justify-content: center;\n}\n@media print {\n  .nav,\n  .actions-wrapper,\n  .bring-box {\n    display: none !important;\n  }\n  .success-page {\n    padding: 0;\n    max-width: 100%;\n  }\n  .ticket-stub {\n    border: 2px solid #000000;\n    box-shadow: none;\n  }\n}\n/*# sourceMappingURL=success.css.map */\n"] }]
-  }], () => [{ type: Router }, { type: ActivatedRoute }, { type: BookingService }, { type: Object, decorators: [{
+  }], () => [{ type: Router }, { type: ActivatedRoute }, { type: BookingService }, { type: ToastrService }, { type: Object, decorators: [{
     type: Inject,
     args: [PLATFORM_ID]
   }] }], null);
 })();
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(Success, { className: "Success", filePath: "src/app/success/success.ts", lineNumber: 16 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(Success, { className: "Success", filePath: "src/app/success/success.ts", lineNumber: 17 });
 })();
 
 // src/app/app.routes.ts
@@ -86531,7 +86532,7 @@ var appConfig = {
     provideHttpClient(withFetch()),
     provideAnimations(),
     provideToastr({
-      timeOut: 3e3,
+      timeOut: 7e3,
       positionClass: "toast-top-right",
       preventDuplicates: true,
       enableHtml: true

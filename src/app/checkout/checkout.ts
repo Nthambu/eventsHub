@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { BookingService } from '../services/booking.service';
@@ -12,6 +12,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './checkout.html',
   styleUrl: './checkout.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Checkout implements OnInit, OnDestroy {
   checkoutData: any;
@@ -26,6 +27,7 @@ export class Checkout implements OnInit, OnDestroy {
     private readonly bookingService: BookingService,
     private readonly toastr: ToastrService,
     private fb: FormBuilder,
+    private readonly cdr: ChangeDetectorRef,
     @Inject(PLATFORM_ID) private platformId: Object,
   ) {}
 
@@ -34,7 +36,6 @@ export class Checkout implements OnInit, OnDestroy {
 
     // Reset processing state on load
     this.isProcessing = false;
-
     // Load active event data (fallback to localStorage if full redirect reloaded the app)
     this.checkoutData = this.bookingService.selectedEventData$?.() ?? null;
 
@@ -131,6 +132,7 @@ export class Checkout implements OnInit, OnDestroy {
     }
 
     this.isProcessing = true;
+    this.cdr.markForCheck();
 
     const paymentRequest: PaymentInitializeRequest = {
       eventId: this.checkoutData.event.id,
@@ -170,11 +172,15 @@ export class Checkout implements OnInit, OnDestroy {
         if (isPlatformBrowser(this.platformId)) {
           localStorage.setItem('paymentReference', response.reference);
           window.location.href = response.authorizationUrl;
-          setTimeout(() => { this.isProcessing = false; }, 8000);
+          setTimeout(() => {
+            this.isProcessing = false;
+            this.cdr.markForCheck();
+          }, 8000);
         }
       },
       error: (err) => {
         this.isProcessing = false;
+        this.cdr.markForCheck();
         const msg = err?.error?.message ?? 'Payment initialization failed — please try again.';
         this.toastr.error(msg, 'Payment error');
       },

@@ -105,7 +105,7 @@ export class Success implements OnInit, OnDestroy {
           localStorage.removeItem('activeCheckoutData'); // clean up after confirmed order
         }
         this.pageState = 'success';
-        this.toastr.success('Your official e-ticket voucher has been emailed')
+        this.toastr.success('Your official e-ticket voucher has been emailed');
         this.router.navigate(['/']);
       },
       error: (err) => {
