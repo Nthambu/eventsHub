@@ -35,6 +35,7 @@ export class Success implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    console.log
     const ref =
       this.route.snapshot.queryParamMap.get('ref') ||
       this.route.snapshot.queryParamMap.get('reference') ||
