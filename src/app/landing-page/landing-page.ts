@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { BookingService } from '../services/booking.service';
@@ -11,6 +11,7 @@ import { ToastrService } from 'ngx-toastr';
   imports: [CommonModule],
   templateUrl: './landing-page.html',
   styleUrl: './landing-page.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LandingPage implements OnInit {
   events: EventData[] = [];
@@ -21,6 +22,7 @@ export class LandingPage implements OnInit {
     private readonly bookingService: BookingService,
     private readonly router: Router,
     private readonly toastr: ToastrService,
+    private readonly cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -34,6 +36,7 @@ export class LandingPage implements OnInit {
 
   getEvents(): void {
     this.loading = true;
+    this.cdr.markForCheck();
     this.bookingService.getEvents().subscribe({
       next: (res) => {
         this.events = res || [];
@@ -42,11 +45,13 @@ export class LandingPage implements OnInit {
         if (this.events.length === 0) {
           this.toastr.info('No events at the moment — check back soon!');
         }
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.loading = false;
         this.events = [];
         this.bookingService.handleApiError(err);
+        this.cdr.markForCheck();
       },
     });
   }
