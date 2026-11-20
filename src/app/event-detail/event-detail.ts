@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BookingService } from '../services/booking.service';
 import { EventData, TicketType } from '../data/events-dto';
+import { SeoService } from '../services/seo.service';
 
 @Component({
   selector: 'app-event-detail',
@@ -26,6 +27,7 @@ export class EventDetail implements OnInit {
     private route: ActivatedRoute,
     public router: Router,
     private bookingService: BookingService,
+    private readonly seo: SeoService,
     @Inject(PLATFORM_ID) private platformId: Object,
   ) {}
 
@@ -58,6 +60,28 @@ export class EventDetail implements OnInit {
     }
     if (this.activeEvent) {
       this.shareTitle = `${this.activeEvent.name} — get your tickets now!`;
+
+      // Per-event SEO
+      const eventUrl = `https://madfuns.com/event/${this.activeEvent.id}`;
+      const minPrice = this.activeEvent.ticket_types?.[0]?.price;
+      this.seo.update({
+        title: this.activeEvent.name,
+        description: this.activeEvent.description
+          || `Buy tickets for ${this.activeEvent.name} at ${this.activeEvent.venue}, ${this.activeEvent.city}. Secure checkout via M-Pesa and card.`,
+        url: eventUrl,
+        image: this.activeEvent.image_url || undefined,
+        type: 'article',
+      });
+      this.seo.setEventSchema({
+        name: this.activeEvent.name,
+        description: this.activeEvent.description || `${this.activeEvent.name} at ${this.activeEvent.venue}`,
+        startDate: this.activeEvent.event_date,
+        location: `${this.activeEvent.venue}, ${this.activeEvent.city}`,
+        image: this.activeEvent.image_url || undefined,
+        url: eventUrl,
+        minPrice,
+        currency: 'KES',
+      });
     }
   }
 

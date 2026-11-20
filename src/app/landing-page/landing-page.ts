@@ -4,6 +4,7 @@ import { Router, RouterModule } from '@angular/router';
 import { BookingService } from '../services/booking.service';
 import { EventData } from '../data/events-dto';
 import { ToastrService } from 'ngx-toastr';
+import { SeoService } from '../services/seo.service';
 
 @Component({
   selector: 'app-landing-page',
@@ -25,9 +26,15 @@ export class LandingPage implements OnInit {
     private readonly router: Router,
     private readonly toastr: ToastrService,
     private readonly cdr: ChangeDetectorRef,
+    private readonly seo: SeoService,
   ) {}
 
   ngOnInit(): void {
+    this.seo.update({
+      title: 'Official Match Tickets & Live Events in Kenya',
+      description: 'Buy official tickets for football matches, concerts and live events in Kenya. Secure checkout via M-Pesa and card. Instant e-ticket delivery.',
+      url: 'https://madfuns.com/',
+    });
     const cached = this.bookingService.getCachedEvents();
     if (cached && cached.length > 0) {
       this.events = cached;

@@ -2,29 +2,68 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>EventHub — Browse &amp; Book Live Event Tickets</title>
+  <title>Madfuns — Official Match Tickets &amp; Live Events in Kenya</title>
   <base href="/" />
 
-  <!-- Responsive viewport -->
+  <!-- Viewport -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-  <!-- SEO -->
-  <meta name="description" content="Browse upcoming events and buy tickets securely online. Powered by EventHub." />
+  <!-- Primary SEO -->
+  <meta name="description" content="Buy official tickets for football matches, concerts and live events in Kenya. Secure checkout via M-Pesa and card. Instant e-ticket to your inbox." />
+  <meta name="keywords" content="event tickets Kenya, football tickets Nairobi, Talanta Stadium tickets, buy tickets online Kenya, live events Kenya, Madfuns ticketing, M-Pesa tickets" />
+  <meta name="author" content="Madfuns Ticketing" />
+  <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#1a56db" />
+  <link rel="canonical" href="https://madfuns.com/" />
 
   <!-- Open Graph -->
-  <meta property="og:title" content="EventHub — Browse &amp; Book Live Event Tickets" />
-  <meta property="og:description" content="Browse upcoming events and buy tickets securely online." />
-  <meta property="og:type" content="website" />
+  <meta property="og:type"        content="website" />
+  <meta property="og:site_name"   content="Madfuns" />
+  <meta property="og:title"       content="Madfuns — Official Match Tickets &amp; Live Events in Kenya" />
+  <meta property="og:description" content="Buy official tickets for football matches, concerts and live events in Kenya. Secure M-Pesa &amp; card checkout. Instant e-ticket delivery." />
+  <meta property="og:url"         content="https://madfuns.com/" />
+  <meta property="og:image"       content="https://madfuns.com/og-image.jpg" />
+  <meta property="og:image:width"  content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:locale"      content="en_KE" />
+
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content="Madfuns — Official Match Tickets &amp; Live Events in Kenya" />
+  <meta name="twitter:description" content="Buy official tickets for football matches, concerts and live events in Kenya." />
+  <meta name="twitter:image"       content="https://madfuns.com/og-image.jpg" />
 
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon.ico" />
 
-  <!-- Prevent FOUC on mobile -->
-  <style>
-    body { margin: 0; background: #ffffff; }
-  </style>
-  <!-- Paystack Inline JS — loaded once, used by checkout component -->
+  <!-- Organization structured data (static — applies to all pages) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Madfuns Ticketing",
+    "url": "https://madfuns.com",
+    "logo": "https://madfuns.com/favicon.ico",
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "email": "support@madfuns.com",
+      "contactType": "customer support",
+      "areaServed": "KE",
+      "availableLanguage": "English"
+    },
+    "sameAs": [
+      "https://facebook.com/madfuns",
+      "https://twitter.com/madfuns",
+      "https://instagram.com/madfuns"
+    ]
+  }
+  </script>
+
+  <!-- Prevent FOUC -->
+  <style>body { margin: 0; background: #ffffff; }</style>
+
+  <!-- Paystack Inline JS -->
   <script src="https://js.paystack.co/v1/inline.js"></script>
 </head>
 <body>

@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+Disallow: /checkout
+Disallow: /success
+
+Sitemap: https://madfuns.com/sitemap.xml
