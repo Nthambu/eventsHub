@@ -11,6 +11,9 @@ export interface EventData {
   created_at: string;
   updated_at: string;
   active: boolean;
+  location:string;
+  shareurl:string;
+  host:string;
   facebook_url: string;
 }
 

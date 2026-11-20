@@ -1,0 +1,127 @@
+/* ── Nav ── */
+.policy-nav {
+  height: 56px;
+  background: #111827;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+}
+
+.policy-nav-logo {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.policy-back {
+  color: #93c5fd;
+  font-size: 13px;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.policy-back:hover {
+  color: #fff;
+}
+
+/* ── Page shell ── */
+.policy-page {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 48px 24px 72px;
+}
+
+/* ── Section ── */
+.policy-section {
+  margin-bottom: 16px;
+}
+
+.policy-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
+}
+
+.policy-meta {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0 0 28px;
+}
+
+/* ── Typography ── */
+.policy-section p {
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.8;
+  margin: 0 0 16px;
+}
+
+.policy-section h2 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
+  margin: 32px 0 10px;
+}
+
+.policy-section ul {
+  margin: 0 0 16px 0;
+  padding-left: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.policy-section ul li {
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.7;
+}
+
+.policy-section a {
+  color: #1a56db;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.policy-section a:hover {
+  color: #1240a0;
+}
+
+.policy-contact {
+  margin-top: 24px;
+  font-size: 14px;
+  color: #374151;
+}
+
+/* ── Footer ── */
+.policy-footer {
+  text-align: center;
+  padding: 20px 24px;
+  font-size: 12px;
+  color: #94a3b8;
+  border-top: 1px solid #e5e7eb;
+  background: #f8fafc;
+}
+
+.policy-footer a {
+  color: #1a56db;
+  text-decoration: none;
+}
+
+.policy-footer a:hover {
+  text-decoration: underline;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .policy-page {
+    padding: 32px 16px 56px;
+  }
+
+  .policy-title {
+    font-size: 24px;
+  }
+}

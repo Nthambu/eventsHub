@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { BookingService } from '../services/booking.service';
 import { EventData } from '../data/events-dto';
 import { ToastrService } from 'ngx-toastr';
@@ -8,7 +8,7 @@ import { ToastrService } from 'ngx-toastr';
 @Component({
   selector: 'app-landing-page',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './landing-page.html',
   styleUrl: './landing-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -17,6 +17,8 @@ export class LandingPage implements OnInit {
   events: EventData[] = [];
   loading = false;
   currentYear = new Date().getFullYear();
+  readonly pageSize = 6;
+  showAll = false;
 
   constructor(
     private readonly bookingService: BookingService,
@@ -90,5 +92,14 @@ export class LandingPage implements OnInit {
 
   getTickets(event: EventData): void {
     this.router.navigate(['/event', event.id], { state: { eventData: event } });
+  }
+
+  visibleEvents(): EventData[] {
+    return this.showAll ? this.events : this.events.slice(0, this.pageSize);
+  }
+
+  toggleShowAll(): void {
+    this.showAll = !this.showAll;
+    this.cdr.markForCheck();
   }
 }

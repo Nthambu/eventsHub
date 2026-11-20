@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, Inject, PLATFORM_ID, Input } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -18,10 +18,13 @@ export class EventDetail implements OnInit {
   selectedTicketType: string = '';         // kept for checkout compatibility
   selectedTicketDetails: TicketType | null = null;
   quantity: number = 1;
+    @Input() shareUrl: string = '';
+  @Input() shareTitle: string = 'Check out this event!';
   
+  copiedToClipboard = false;
   constructor(
     private route: ActivatedRoute,
-    private router: Router,
+    public router: Router,
     private bookingService: BookingService,
     @Inject(PLATFORM_ID) private platformId: Object,
   ) {}
@@ -48,6 +51,13 @@ export class EventDetail implements OnInit {
   private initializeTicketSelection(): void {
     if (this.activeEvent?.ticket_types?.length) {
       this.selectTicketByIndex(0);
+    }
+    // Set share metadata from the loaded event
+    if (isPlatformBrowser(this.platformId)) {
+      this.shareUrl = window.location.href;
+    }
+    if (this.activeEvent) {
+      this.shareTitle = `${this.activeEvent.name} — get your tickets now!`;
     }
   }
 
@@ -176,7 +186,57 @@ export class EventDetail implements OnInit {
     this.bookingService.updateCheckoutData(checkoutData);
     this.router.navigate(['/checkout']);
   }
+openInGoogleMaps(): void {
+  const event = this.activeEvent;
+  const place = event?.location || event?.venue;
 
+  if (!place) return;
+
+  const encodedPlace = encodeURIComponent(place);
+  const googleMapsUrl = `https://google.com/maps/search/?api=1&query=${encodedPlace}`;
+
+  window.open(googleMapsUrl, '_blank', 'noopener,noreferrer');
+}
+share(platform: 'facebook' | 'whatsapp' | 'linkedin' | 'x' | 'email' | 'instagram'): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    const url = this.shareUrl || window.location.href;
+    const encodedUrl = encodeURIComponent(url);
+    const encodedTitle = encodeURIComponent(this.shareTitle);
+    let targetUrl = '';
+
+    switch (platform) {
+      case 'facebook':
+        targetUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+        break;
+      case 'whatsapp':
+        targetUrl = `https://wa.me/?text=${encodedTitle}%20${encodedUrl}`;
+        break;
+      case 'linkedin':
+        targetUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
+        break;
+      case 'x':
+        targetUrl = `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`;
+        break;
+      case 'email':
+        window.location.href = `mailto:?subject=${encodedTitle}&body=${encodedTitle}%0A%0A${encodedUrl}`;
+        return;
+      case 'instagram':
+        this.copyForInstagram();
+        return;
+    }
+
+    if (targetUrl) {
+      window.open(targetUrl, '_blank', 'noopener,noreferrer,width=600,height=500');
+    }
+  }
+
+  private copyForInstagram(): void {
+    navigator.clipboard.writeText(this.shareUrl).then(() => {
+      this.copiedToClipboard = true;
+      setTimeout(() => (this.copiedToClipboard = false), 3000);
+    });
+  }
   goBackToEvents(): void {
     this.router.navigate(['/']);
   }

@@ -3,6 +3,8 @@ import { LandingPage } from './landing-page/landing-page';
 import { EventDetail } from './event-detail/event-detail';
 import { Checkout } from './checkout/checkout';
 import { Success } from './success/success';
+import { PrivacyPolicy } from './privacy-policy/privacy-policy';
+import { RefundPolicy } from './refund-policy/refund-policy';
 
 export const routes: Routes = [
   {
@@ -17,15 +19,17 @@ export const routes: Routes = [
     path: 'checkout',
     component: Checkout,
   },
-  /**
-   * Paystack callback URL — the backend sets:
-   *   callback_url = FRONTEND_URL/success?ref=TKT-xxx
-   * Angular's router exposes `?reference` and `?trxref` as query params
-   * which Success component reads via ActivatedRoute.
-   */
   {
     path: 'success',
     component: Success,
+  },
+  {
+    path: 'privacy-policy',
+    component: PrivacyPolicy,
+  },
+  {
+    path: 'refund-policy',
+    component: RefundPolicy,
   },
   {
     path: '**',

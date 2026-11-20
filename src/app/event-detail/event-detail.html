@@ -16,6 +16,7 @@
 <div *ngIf="activeEvent" class="event-detail-container">
   <!-- Event Info -->
   <div class="event-info">
+    <!-- Hero image -->
     <div
       class="ecard-img"
       [style]="'background: ' + getEventGradient() + '; font-size: 48px; margin-bottom: 16px'"
@@ -24,36 +25,104 @@
       <span *ngIf="!activeEvent.image_url" style="font-size: 32px">🎵</span>
     </div>
 
-    <div style="font-size: 20px; font-weight: 500; margin-bottom: 8px" class="event-title">
-      {{ activeEvent.name }}
+    <!-- Share row -->
+    <div class="share-row">
+      <span class="share-label">Share:</span>
+
+      <!-- Facebook -->
+      <button type="button" class="share-icon-btn" (click)="share('facebook')" aria-label="Share on Facebook">
+        <svg viewBox="0 0 24 24" fill="#1877F2"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"/></svg>
+      </button>
+
+      <!-- Instagram (copies link) -->
+      <button type="button" class="share-icon-btn" (click)="share('instagram')" [title]="copiedToClipboard ? 'Link copied!' : 'Copy link for Instagram'" aria-label="Copy link for Instagram">
+        <svg viewBox="0 0 24 24" fill="url(#ig-grad)">
+          <defs>
+            <linearGradient id="ig-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#f09433"/>
+              <stop offset="25%" style="stop-color:#e6683c"/>
+              <stop offset="50%" style="stop-color:#dc2743"/>
+              <stop offset="75%" style="stop-color:#cc2366"/>
+              <stop offset="100%" style="stop-color:#bc1888"/>
+            </linearGradient>
+          </defs>
+          <path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8 1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/>
+        </svg>
+      </button>
+
+      <!-- LinkedIn -->
+      <button type="button" class="share-icon-btn" (click)="share('linkedin')" aria-label="Share on LinkedIn">
+        <svg viewBox="0 0 24 24" fill="#0A66C2"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
+      </button>
+
+      <!-- X (Twitter) -->
+      <button type="button" class="share-icon-btn" (click)="share('x')" aria-label="Share on X">
+        <svg viewBox="0 0 24 24" fill="#000000"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      </button>
+
+      <!-- WhatsApp -->
+      <button type="button" class="share-icon-btn" (click)="share('whatsapp')" aria-label="Share on WhatsApp">
+        <svg viewBox="0 0 24 24" fill="#25D366"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.82 14.01c-.24.68-1.41 1.3-1.95 1.38-.5.08-1.13.11-1.82-.11-.42-.13-.96-.31-1.65-.61-2.9-1.25-4.79-4.17-4.94-4.36-.14-.19-1.18-1.57-1.18-3 0-1.43.75-2.13 1.01-2.42.27-.29.58-.36.77-.36.19 0 .39 0 .56.01.18.01.42-.07.66.5.24.58.82 2 .89 2.15.07.14.12.31.02.5-.1.19-.14.31-.29.48-.14.17-.3.38-.43.51-.14.14-.29.3-.13.58.17.29.74 1.22 1.59 1.98 1.09.97 2.01 1.27 2.3 1.42.29.14.46.12.63-.07.17-.19.72-.84.91-1.13.19-.29.39-.24.65-.14.27.1 1.69.8 1.98.94.29.14.48.22.55.34.07.12.07.69-.17 1.37z"/></svg>
+      </button>
+
+      <!-- Email -->
+      <button type="button" class="share-icon-btn" (click)="share('email')" aria-label="Share via Email">
+        <svg viewBox="0 0 24 24" fill="#555555"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+      </button>
     </div>
 
-    <div
-      style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px"
-      class="event-meta"
-    >
-      📅 {{ formatEventDate(activeEvent.event_date) }}
+    <!-- Host -->
+    <div class="ei-section">
+      <h3 class="ei-heading">Host</h3>
+      <div class="ei-host-name">{{ activeEvent.name | uppercase }}</div>
     </div>
 
-    <div
-      style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px"
-      class="event-meta"
-    >
-      📍 {{ activeEvent.venue }}
+    <!-- Description -->
+    <div class="ei-section">
+      <h3 class="ei-heading">Description</h3>
+      <div class="ei-body">
+        {{
+          activeEvent.description ||
+            'An unforgettable event experience awaits you at ' +
+              activeEvent.venue +
+              '. Join us for an amazing time!'
+        }}
+      </div>
     </div>
 
-    <button class="btn btn-outline btn-sm mb-3" *ngIf="activeEvent.facebook_url">
-      📘 View on Facebook
-    </button>
+    <!-- Dates -->
+    <div class="ei-section">
+      <h3 class="ei-heading">Dates</h3>
+      <div class="ei-body">{{ formatEventDate(activeEvent.event_date) }}</div>
+    </div>
 
-    <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px">About this event</div>
-    <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.7">
-      {{
-        activeEvent.description ||
-          'An unforgettable event experience awaits you at ' +
-            activeEvent.venue +
-            '. Join us for an amazing time!'
-      }}
+    <!-- Photos -->
+    <div class="ei-section" *ngIf="activeEvent.image_url">
+      <h3 class="ei-heading">Photos</h3>
+      <div class="ei-photos">
+        <img
+          [src]="activeEvent.image_url"
+          [alt]="activeEvent.name"
+          class="ei-photo-thumb"
+          (error)="$any($event.target).style.display='none'"
+        />
+      </div>
+    </div>
+
+    <!-- Location -->
+    <div class="ei-section">
+    <h3 class="ei-heading">Location</h3><br>
+     
+      <span
+        class="ei-location-link text-decoration-none"
+        role="button"
+        tabindex="0"
+        (click)="openInGoogleMaps()"
+        (keyup.enter)="openInGoogleMaps()"
+        [title]="'Open ' + (activeEvent.location || activeEvent.venue) + ' in Google Maps'"
+      >📍 
+        {{ activeEvent.location || activeEvent.venue }}, {{ activeEvent.city }}, {{ activeEvent.state }}
+      </span>
     </div>
   </div>
 

@@ -18,6 +18,14 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'privacy-policy',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'refund-policy',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: '**',
     renderMode: RenderMode.Server,
   },
