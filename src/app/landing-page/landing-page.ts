@@ -33,7 +33,7 @@ export class LandingPage implements OnInit {
     this.seo.update({
       title: 'Official Match Tickets & Live Events in Kenya',
       description: 'Buy official tickets for football matches, concerts and live events in Kenya. Secure checkout via M-Pesa and card. Instant e-ticket delivery.',
-      url: 'https://madfuns.com/',
+      url: 'https://madfuns.co.ke/',
     });
     const cached = this.bookingService.getCachedEvents();
     if (cached && cached.length > 0) {

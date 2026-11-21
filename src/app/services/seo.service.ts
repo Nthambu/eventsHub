@@ -11,7 +11,7 @@ export interface SeoConfig {
 }
 
 const SITE = 'Madfuns';
-const BASE_URL = 'https://madfuns.com';
+const BASE_URL = 'https://madfuns.co.ke';
 const DEFAULT_IMAGE = `${BASE_URL}/og-image.jpg`;
 
 @Injectable({ providedIn: 'root' })

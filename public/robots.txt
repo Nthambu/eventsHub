@@ -4,4 +4,4 @@ Allow: /
 Disallow: /checkout
 Disallow: /success
 
-Sitemap: https://madfuns.com/sitemap.xml
+Sitemap: https://madfuns.co.ke/sitemap.xml
