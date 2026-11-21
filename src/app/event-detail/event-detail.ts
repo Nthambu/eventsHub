@@ -56,7 +56,8 @@ export class EventDetail implements OnInit {
     }
     // Set share metadata from the loaded event
     if (isPlatformBrowser(this.platformId)) {
-      this.shareUrl = window.location.href;
+      //this.shareUrl = window.location.href;
+    this.shareUrl='https://madfuns.co.ke/'
     }
     if (this.activeEvent) {
       this.shareTitle = `${this.activeEvent.name} — get your tickets now!`;
@@ -224,7 +225,8 @@ openInGoogleMaps(): void {
 share(platform: 'facebook' | 'whatsapp' | 'linkedin' | 'x' | 'email' | 'instagram'): void {
     if (!isPlatformBrowser(this.platformId)) return;
 
-    const url = this.shareUrl || window.location.href;
+    // const url = this.shareUrl || window.location.href;
+    const url=this.shareUrl;
     const encodedUrl = encodeURIComponent(url);
     const encodedTitle = encodeURIComponent(this.shareTitle);
     let targetUrl = '';
