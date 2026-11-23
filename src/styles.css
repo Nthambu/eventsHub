@@ -551,3 +551,7 @@ body {
 .fw-600 {
   font-weight: 600;
 }
+.nav-logo > img ,.lp-footer-logo >img{
+  height: 24px;
+  width: 24px;
+}

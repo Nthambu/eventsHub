@@ -5,6 +5,9 @@
   grid-template-columns: 1fr 350px;
   gap: 24px;
 }
+.nav-logo{
+margin-left:3px;
+}
 .nav-link{
    color: #93c5fd;
   font-size: 13px;
