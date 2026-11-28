@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject, PLATFORM_ID, Input } from '@angular/core';
+import { Component, OnInit, Inject, PLATFORM_ID, Input, ChangeDetectorRef } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -28,6 +28,7 @@ export class EventDetail implements OnInit {
     public router: Router,
     private bookingService: BookingService,
     private readonly seo: SeoService,
+    private readonly cdr: ChangeDetectorRef,
     @Inject(PLATFORM_ID) private platformId: Object,
   ) {}
 
@@ -56,8 +57,8 @@ export class EventDetail implements OnInit {
     }
     // Set share metadata from the loaded event
     if (isPlatformBrowser(this.platformId)) {
-      //this.shareUrl = window.location.href;
-    this.shareUrl='https://madfuns.co.ke/'
+      // Use the actual current URL — works for direct links, shared URLs, everything
+      this.shareUrl = window.location.href;
     }
     if (this.activeEvent) {
       this.shareTitle = `${this.activeEvent.name} — get your tickets now!`;
@@ -96,10 +97,12 @@ export class EventDetail implements OnInit {
       next: (event) => {
         this.activeEvent = event;
         this.initializeTicketSelection();
+        // Zoneless apps don't auto-detect mutations from async callbacks — must mark manually
+        this.cdr.markForCheck();
       },
-      error: (err) => {
+      error: () => {
         this.router.navigate(['/']);
-      }
+      },
     });
   }
 
